@@ -1,10 +1,10 @@
 {
-  "name": "custom-cli-codex-agent",
+  "name": "awesome-cli-codex-agent",
   "version": "1.0.0",
   "description": "Interactive Codex client powered by Codex App Server",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/verkhoturov/custom-codex-agent.git"
+    "url": "git+https://github.com/verkhoturov/awesome-cli-codex-agent.git"
   },
   "license": "ISC",
   "author": "",
