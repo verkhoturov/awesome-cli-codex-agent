@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.codex-data
+*.log
+
+AGENTS.md
