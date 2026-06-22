@@ -26,7 +26,7 @@ const ROUTING_SCHEMA: Record<string, unknown> = {
   type: 'object',
 };
 
-export class WorkflowRunner {
+export class MultiAgentRunner {
   private active = false;
 
   constructor(
