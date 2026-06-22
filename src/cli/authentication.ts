@@ -1,155 +1,83 @@
-import { spawnSync } from 'node:child_process';
+import type { NativeCodexAuth } from '../auth/native-codex-auth.js';
+import {
+  isNativeAuthenticationMethod,
+  type NativeAuthenticationMethod,
+  type NativeAuthenticationSelection,
+} from '../auth/types.js';
+import type { CliUi } from '../ui/protocol.js';
 
-import { ensureCodexHome } from '../utils/codex-home.js';
-import type { Terminal } from './terminal.js';
-
-const CREDENTIAL_STORE_OVERRIDE = 'cli_auth_credentials_store="file"';
-
-type AuthenticationMethod = 'api-key' | 'browser' | 'device-code' | 'access-token';
-
-interface AuthenticationSelection {
-  credential?: string;
-  method: AuthenticationMethod;
-}
+const AUTHENTICATION_OPTIONS = [
+  { label: 'Sign in with ChatGPT in a browser', value: 'browser' },
+  { label: 'Sign in with ChatGPT using a device code', value: 'device-code' },
+  { label: 'OpenAI API key', value: 'api-key' },
+  { label: 'ChatGPT access token', value: 'access-token' },
+] as const;
 
 export async function ensureCodexAuthentication(
-  codexHome: string,
-  terminal: Terminal,
+  authentication: NativeCodexAuth,
+  ui: CliUi,
   forceLogin: boolean,
 ): Promise<string> {
-  ensureCodexHome(codexHome);
-
-  const savedAuthentication = readLoginStatus(codexHome);
+  const savedAuthentication = authentication.status();
   if (savedAuthentication && !forceLogin) {
     return savedAuthentication;
   }
 
-  if (savedAuthentication) {
-    terminal.write(`Current authentication: ${savedAuthentication}\n`);
-  } else {
-    terminal.write('No saved Codex authentication found.\n');
-  }
+  ui.emit({
+    kind: 'status',
+    text: savedAuthentication
+      ? `Current authentication: ${savedAuthentication}\n`
+      : 'No saved Codex authentication found.\n',
+    type: 'message',
+  });
 
-  const selection = await promptForAuthentication(terminal);
-  terminal.close();
-  runCodexLogin(codexHome, selection);
+  const selection = await promptForAuthentication(ui);
+  await ui.withTerminalReleased(() => authentication.login(selection));
 
-  const updatedAuthentication = readLoginStatus(codexHome);
+  const updatedAuthentication = authentication.status();
   if (!updatedAuthentication) {
     throw new Error('Codex CLI did not save authentication');
   }
-
   return updatedAuthentication;
 }
 
-export function logoutCodex(codexHome: string): string {
-  const result = spawnSync('codex', ['logout', '-c', CREDENTIAL_STORE_OVERRIDE], {
-    encoding: 'utf8',
-    env: codexEnvironment(codexHome),
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+async function promptForAuthentication(ui: CliUi): Promise<NativeAuthenticationSelection> {
+  let method: NativeAuthenticationMethod | undefined;
 
-  if (result.error) {
-    throw result.error;
-  }
-  if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || 'Unable to log out of Codex');
+  while (!method) {
+    const answer = await ui.request({
+      defaultValue: 'browser',
+      description: 'Choose a Codex authentication method:\n',
+      displayOptions: true,
+      options: [...AUTHENTICATION_OPTIONS],
+      prompt: 'Authentication method [1]: ',
+      type: 'choice',
+    });
+
+    if (isNativeAuthenticationMethod(answer)) {
+      method = answer;
+    } else {
+      ui.emit({ kind: 'error', text: 'Enter 1, 2, 3, or 4.\n', type: 'message' });
+    }
   }
 
-  return result.stdout.trim() || result.stderr.trim() || 'Logged out';
+  if (method === 'api-key') {
+    return { credential: await requireSecret(ui, 'OpenAI API key: '), method };
+  }
+
+  if (method === 'access-token') {
+    return { credential: await requireSecret(ui, 'ChatGPT access token: '), method };
+  }
+
+  return { method };
 }
 
-async function promptForAuthentication(terminal: Terminal): Promise<AuthenticationSelection> {
-  terminal.write(`Choose a Codex authentication method:
-  1. Sign in with ChatGPT in a browser
-  2. Sign in with ChatGPT using a device code
-  3. OpenAI API key
-  4. ChatGPT access token
-`);
-
-  while (true) {
-    const answer = (await terminal.question('Authentication method [1]: ')).trim() || '1';
-
-    if (answer === '1') {
-      return { method: 'browser' };
-    }
-    if (answer === '2') {
-      return { method: 'device-code' };
-    }
-    if (answer === '3') {
-      return {
-        credential: await requireSecret(terminal, 'OpenAI API key: '),
-        method: 'api-key',
-      };
-    }
-    if (answer === '4') {
-      return {
-        credential: await requireSecret(terminal, 'ChatGPT access token: '),
-        method: 'access-token',
-      };
-    }
-
-    terminal.write('Enter 1, 2, 3, or 4.\n');
-  }
-}
-
-async function requireSecret(terminal: Terminal, prompt: string): Promise<string> {
-  const secret = (await terminal.questionSecret(prompt)).trim();
+async function requireSecret(ui: CliUi, prompt: string): Promise<string> {
+  const secret = (await ui.request({ prompt, type: 'secret' })).trim();
+  
   if (!secret) {
     throw new Error('Authentication credential is required');
   }
+
   return secret;
-}
-
-function readLoginStatus(codexHome: string): string | undefined {
-  const result = spawnSync('codex', ['login', '-c', CREDENTIAL_STORE_OVERRIDE, 'status'], {
-    encoding: 'utf8',
-    env: codexEnvironment(codexHome),
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
-  if (result.error) {
-    throw result.error;
-  }
-  if (result.status === 0) {
-    return result.stdout.trim() || result.stderr.trim() || 'logged in';
-  }
-  if (result.status === 1 && result.stderr.trim() === 'Not logged in') {
-    return undefined;
-  }
-
-  throw new Error(result.stderr.trim() || 'Unable to check Codex authentication');
-}
-
-function runCodexLogin(codexHome: string, selection: AuthenticationSelection): void {
-  const args = ['login', '-c', CREDENTIAL_STORE_OVERRIDE];
-  if (selection.method === 'device-code') {
-    args.push('--device-auth');
-  } else if (selection.method === 'api-key') {
-    args.push('--with-api-key');
-  } else if (selection.method === 'access-token') {
-    args.push('--with-access-token');
-  }
-
-  const usesCredential = selection.credential !== undefined;
-  const result = spawnSync('codex', args, {
-    encoding: 'utf8',
-    env: codexEnvironment(codexHome),
-    input: usesCredential ? `${selection.credential}\n` : undefined,
-    stdio: usesCredential ? ['pipe', 'inherit', 'inherit'] : 'inherit',
-  });
-
-  if (result.error) {
-    throw result.error;
-  }
-  if (result.status !== 0) {
-    throw new Error('Codex authentication was cancelled or failed');
-  }
-}
-
-function codexEnvironment(codexHome: string): NodeJS.ProcessEnv {
-  return {
-    ...process.env,
-    CODEX_HOME: codexHome,
-  };
 }

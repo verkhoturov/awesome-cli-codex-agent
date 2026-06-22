@@ -1,48 +1,49 @@
 import { AgentRunner } from '../agents/runner.js';
 import type { AppServerClient } from '../app-server/client.js';
 import type { CliState } from '../types.js';
+import { emitMessage } from '../ui/output.js';
+import type { CliUi } from '../ui/protocol.js';
 import { type CommandResult, handleCommand } from './commands.js';
 import { handleServerRequest } from './server-requests/handler.js';
 import { PromptQueue } from './server-requests/queue.js';
 import { printSessionSummary, printWelcome } from './session-output.js';
-import { NodeTerminal, type Terminal } from './terminal.js';
 import { TurnRunner } from './turn/runner.js';
 
 export async function runCli(
   state: CliState,
   client: AppServerClient,
-  terminal: Terminal = new NodeTerminal(),
+  ui: CliUi,
   resumeThreadId?: string,
 ): Promise<Exclude<CommandResult, 'continue'>> {
   let exiting = false;
   let exitResult: Exclude<CommandResult, 'continue'> = 'exit';
   const promptQueue = new PromptQueue();
-  const turnRunner = new TurnRunner(state, client, terminal);
-  const agentRunner = new AgentRunner(state, turnRunner, terminal);
+  const turnRunner = new TurnRunner(state, client, ui);
+  const agentRunner = new AgentRunner(state, turnRunner, ui);
 
   client.setServerRequestHandler(request =>
-    promptQueue.run(() => handleServerRequest(request, terminal, agentRunner.workingIndicator)),
+    promptQueue.run(() => handleServerRequest(request, ui)),
   );
 
-  const unsubscribeInterrupt = terminal.onInterrupt(() => {
+  const unsubscribeInterrupt = ui.onInterrupt(() => {
     if (agentRunner.interrupt()) {
       return;
     }
 
     exiting = true;
-    terminal.close();
+    ui.cancelInput();
   });
 
   try {
-    printWelcome(terminal, state);
+    printWelcome(ui, state);
     if (resumeThreadId) {
-      await handleCommand(`/resume ${resumeThreadId}`, { client, state, terminal });
+      await handleCommand(`/resume ${resumeThreadId}`, { client, state, ui });
     }
 
     while (!exiting) {
       let input: string;
       try {
-        input = (await terminal.question('\nyou> ')).trim();
+        input = (await ui.request({ prompt: '\nyou> ', type: 'text' })).trim();
       } catch {
         break;
       }
@@ -52,7 +53,7 @@ export async function runCli(
       }
 
       if (input.startsWith('/')) {
-        const result = await handleCommand(input, { client, state, terminal });
+        const result = await handleCommand(input, { client, state, ui });
         if (result !== 'continue') {
           exitResult = result;
           break;
@@ -64,13 +65,12 @@ export async function runCli(
         await agentRunner.run(input);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        terminal.writeError(`\nError: ${message}\n`);
+        emitMessage(ui, `\nError: ${message}\n`, 'error', 'stderr');
       }
     }
   } finally {
     unsubscribeInterrupt();
-    terminal.close();
-    printSessionSummary(terminal, state);
+    printSessionSummary(ui, state);
   }
 
   return exitResult;

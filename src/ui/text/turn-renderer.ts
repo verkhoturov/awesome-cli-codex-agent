@@ -1,103 +1,83 @@
 import type { RenderableAppServerEvent } from '../../app-server/events.js';
 import type { FileChange, ThreadItem } from '../../app-server/protocol.js';
-import type { Terminal } from '../terminal.js';
 
 type OpenLine = 'answer' | 'command' | 'reasoning';
 
-export interface AppServerOutputState {
+export interface TextTurnOutputState {
   beforeWrite?: () => void;
   changedFiles: Set<string>;
-  errorDisplayed: boolean;
   openLine?: OpenLine;
-  streamedText: boolean;
-  terminal: Terminal;
+  write: (value: string) => void;
 }
 
-export function createAppServerOutputState(
-  terminal: Terminal,
+export function createTextTurnOutputState(
+  writeOutput: (value: string) => void,
   beforeWrite?: () => void,
-): AppServerOutputState {
+): TextTurnOutputState {
   return {
     beforeWrite,
     changedFiles: new Set(),
-    errorDisplayed: false,
-    streamedText: false,
-    terminal,
+    write: writeOutput,
   };
 }
 
-export function renderAppServerEvent(
+export function renderTextTurnEvent(
   event: RenderableAppServerEvent,
-  output: AppServerOutputState,
+  output: TextTurnOutputState,
 ): void {
   switch (event.type) {
     case 'reasoningDelta':
       renderDelta(output, 'reasoning', '[reasoning] ', event.delta);
       return;
-
     case 'agentMessageDelta':
-      if (renderDelta(output, 'answer', 'agent> ', event.delta)) {
-        output.streamedText = true;
-      }
+      renderDelta(output, 'answer', 'agent> ', event.delta);
       return;
-
     case 'commandOutputDelta':
       renderDelta(output, 'command', '', event.delta);
       return;
-
     case 'filePatch':
       renderFileChanges(output, event.changes);
       return;
-
     case 'itemStarted':
       renderItemStarted(output, event.item);
       return;
-
     case 'itemCompleted':
       renderItemCompleted(output, event.item);
       return;
-
     case 'error':
       closeOpenLine(output);
       write(output, `[error] ${event.message}\n`);
-      output.errorDisplayed = true;
       return;
-
     case 'warning':
       closeOpenLine(output);
       write(output, `[warning] ${event.message}\n`);
       return;
-
     default:
       assertNever(event);
   }
 }
 
-export function finishAppServerOutput(output: AppServerOutputState): void {
+export function finishTextTurnOutput(output: TextTurnOutputState): void {
   closeOpenLine(output);
 }
 
-function renderItemStarted(output: AppServerOutputState, item: ThreadItem): void {
+function renderItemStarted(output: TextTurnOutputState, item: ThreadItem): void {
   switch (item.type) {
     case 'commandExecution':
       closeOpenLine(output);
       write(output, `[command] ${item.command || 'shell command'}\n`);
       return;
-
     case 'mcpToolCall':
       closeOpenLine(output);
       write(output, `[mcp] ${item.server || 'server'}/${item.tool || 'tool'}\n`);
       return;
-
     case 'webSearch':
       closeOpenLine(output);
       write(output, `[web search] ${item.query || ''}\n`);
       return;
-
     case 'fileChange':
       renderFileChanges(output, item.changes);
       return;
-
     case 'collabAgentToolCall':
       closeOpenLine(output);
       write(
@@ -105,7 +85,6 @@ function renderItemStarted(output: AppServerOutputState, item: ThreadItem): void
         `[subagent] ${item.tool || 'activity'}${item.model ? ` model=${item.model}` : ''}\n`,
       );
       return;
-
     case 'subAgentActivity':
       closeOpenLine(output);
       write(
@@ -115,7 +94,7 @@ function renderItemStarted(output: AppServerOutputState, item: ThreadItem): void
   }
 }
 
-function renderItemCompleted(output: AppServerOutputState, item: ThreadItem): void {
+function renderItemCompleted(output: TextTurnOutputState, item: ThreadItem): void {
   if (item.type === 'commandExecution') {
     closeLine(output, 'command');
     if (typeof item.exitCode === 'number' && item.exitCode !== 0) {
@@ -135,7 +114,7 @@ function renderItemCompleted(output: AppServerOutputState, item: ThreadItem): vo
   }
 }
 
-function renderFileChanges(output: AppServerOutputState, changes: FileChange[] | undefined): void {
+function renderFileChanges(output: TextTurnOutputState, changes: FileChange[] | undefined): void {
   for (const change of changes || []) {
     if (output.changedFiles.has(change.path)) {
       continue;
@@ -147,25 +126,22 @@ function renderFileChanges(output: AppServerOutputState, changes: FileChange[] |
 }
 
 function renderDelta(
-  output: AppServerOutputState,
+  output: TextTurnOutputState,
   line: OpenLine,
   prefix: string,
   delta: string,
-): boolean {
+): void {
   if (!delta) {
-    return false;
+    return;
   }
-
   openLine(output, line, prefix);
   write(output, delta);
-  return true;
 }
 
-function openLine(output: AppServerOutputState, line: OpenLine, prefix: string): void {
+function openLine(output: TextTurnOutputState, line: OpenLine, prefix: string): void {
   if (output.openLine === line) {
     return;
   }
-
   closeOpenLine(output);
   if (prefix) {
     write(output, prefix);
@@ -173,22 +149,22 @@ function openLine(output: AppServerOutputState, line: OpenLine, prefix: string):
   output.openLine = line;
 }
 
-function closeLine(output: AppServerOutputState, line: OpenLine): void {
+function closeLine(output: TextTurnOutputState, line: OpenLine): void {
   if (output.openLine === line) {
     closeOpenLine(output);
   }
 }
 
-function closeOpenLine(output: AppServerOutputState): void {
+function closeOpenLine(output: TextTurnOutputState): void {
   if (output.openLine) {
     write(output, '\n');
     output.openLine = undefined;
   }
 }
 
-function write(output: AppServerOutputState, value: string): void {
+function write(output: TextTurnOutputState, value: string): void {
   output.beforeWrite?.();
-  output.terminal.write(value);
+  output.write(value);
 }
 
 function assertNever(value: never): never {

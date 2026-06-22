@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { CodexAppServerClient } from './app-server/client.js';
-import { ensureCodexAuthentication, logoutCodex } from './cli/authentication.js';
+import { NativeCodexAuth } from './auth/native-codex-auth.js';
+import { ensureCodexAuthentication } from './cli/authentication.js';
 import { runCli } from './cli/index.js';
-import { NodeTerminal } from './cli/terminal.js';
 import { usage } from './config.js';
+import { emitMessage } from './ui/output.js';
+import { TextCliUi } from './ui/text/index.js';
 import { checkCodexCli } from './utils/check-codex-cli.js';
 import { parseArgs } from './utils/cli-arguments.js';
 
@@ -17,35 +19,33 @@ async function main(): Promise<void> {
   }
 
   const codexVersion = checkCodexCli();
-
-  let terminal = new NodeTerminal();
-  let authentication: string;
+  const nativeAuthentication = new NativeCodexAuth(state.codexHome);
+  const ui = new TextCliUi();
   try {
-    authentication = await ensureCodexAuthentication(state.codexHome, terminal, forceLogin);
+    const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);
+    emitMessage(
+      ui,
+      `Using ${codexVersion}\nAuthentication: ${authentication}\n\nConnecting to Codex app-server...\n`,
+      'status',
+    );
+
+    const appServer = new CodexAppServerClient({
+      codexHome: state.codexHome,
+      cwd: state.cwd,
+    });
+    let logout = false;
+    try {
+      await appServer.connect();
+      logout = (await runCli(state, appServer, ui, resumeThreadId)) === 'logout';
+    } finally {
+      await appServer.close();
+    }
+
+    if (logout) {
+      emitMessage(ui, `${nativeAuthentication.logout()}\n`, 'status');
+    }
   } finally {
-    terminal.close();
-  }
-  terminal = new NodeTerminal();
-  terminal.write(
-    `Using ${codexVersion}\nAuthentication: ${authentication}\n\nConnecting to Codex app-server...\n`,
-  );
-
-  const appServer = new CodexAppServerClient({
-    codexHome: state.codexHome,
-    cwd: state.cwd,
-  });
-
-  let logout = false;
-  try {
-    await appServer.connect();
-    logout = (await runCli(state, appServer, terminal, resumeThreadId)) === 'logout';
-  } finally {
-    terminal.close();
-    await appServer.close();
-  }
-
-  if (logout) {
-    terminal.write(`${logoutCodex(state.codexHome)}\n`);
+    ui.close();
   }
 }
 

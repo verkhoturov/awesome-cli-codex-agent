@@ -3,13 +3,8 @@ import { type AppServerEvent, decodeAppServerEvent } from '../../app-server/even
 import type { ThreadTokenUsage, TurnCompletedParams } from '../../app-server/protocol.js';
 import { interruptTurn, startThread, startTurn } from '../../app-server/session.js';
 import type { AgentProfile, CliState } from '../../types.js';
-import type { Terminal } from '../terminal.js';
-import {
-  createAppServerOutputState,
-  finishAppServerOutput,
-  renderAppServerEvent,
-} from './event-renderer.js';
-import { WorkingIndicator } from './working-indicator.js';
+import { emitMessage } from '../../ui/output.js';
+import type { CliUi } from '../../ui/protocol.js';
 
 export type TurnOutputMode = 'activity' | 'full' | 'silent';
 
@@ -33,46 +28,45 @@ interface ActiveTurn {
   interruptSent: boolean;
   threadId?: string;
   turnId?: string;
-  workingIndicator: WorkingIndicator;
+  uiId: string;
 }
 
 export class TurnRunner {
   private activeTurn?: ActiveTurn;
+  private nextUiTurnId = 1;
 
   constructor(
     private readonly state: CliState,
     private readonly client: AppServerClient,
-    private readonly terminal: Terminal,
+    private readonly ui: CliUi,
   ) {}
 
   get isActive(): boolean {
     return this.activeTurn !== undefined;
   }
 
-  get workingIndicator(): WorkingIndicator | undefined {
-    return this.activeTurn?.workingIndicator;
-  }
-
   interrupt(): boolean {
     const activeTurn = this.activeTurn;
+    
     if (!activeTurn) {
       return false;
     }
+
     if (activeTurn.interruptRequested) {
       return true;
     }
 
     activeTurn.interruptRequested = true;
-    activeTurn.workingIndicator.hide();
-    this.terminal.write('\n[interrupting current request]\n');
+    this.ui.emit({ id: activeTurn.uiId, type: 'turnInterruptRequested' });
     if (activeTurn.turnId && activeTurn.threadId) {
       activeTurn.interruptSent = true;
       void interruptTurn(this.client, activeTurn.threadId, activeTurn.turnId).catch(error => {
         activeTurn.interruptSent = false;
         const message = error instanceof Error ? error.message : String(error);
-        this.terminal.writeError(`Interrupt failed: ${message}\n`);
+        this.ui.emit({ id: activeTurn.uiId, message, type: 'turnInterruptFailed' });
       });
     }
+
     return true;
   }
 
@@ -81,30 +75,32 @@ export class TurnRunner {
       throw new Error('A Codex turn is already running');
     }
 
-    const workingIndicator = new WorkingIndicator(
-      this.terminal,
-      request.label || request.profile.role,
-    );
+    const uiId = `turn-${this.nextUiTurnId++}`;
     const activeTurn: ActiveTurn = {
       interruptRequested: false,
       interruptSent: false,
-      workingIndicator,
+      uiId,
     };
-    const output = createAppServerOutputState(this.terminal, () => workingIndicator.hide());
+
     const bufferedEvents: AppServerEvent[] = [];
+    let displayFinished = false;
+    let renderedStreamedText = false;
     let streamedText = '';
     let tokenUsage: ThreadTokenUsage | undefined;
 
     this.activeTurn = activeTurn;
-    workingIndicator.start();
+    this.ui.emit({ id: uiId, label: request.label || request.profile.role, type: 'turnStarted' });
 
     let resolveCompletion: (params: TurnCompletedParams) => void = () => undefined;
     let rejectCompletion: (error: Error) => void = () => undefined;
+    
     const completion = new Promise<TurnCompletedParams>((resolve, reject) => {
       resolveCompletion = resolve;
       rejectCompletion = reject;
     });
+
     let rejectDisconnected: (error: Error) => void = () => undefined;
+
     const disconnected = new Promise<never>((_resolve, reject) => {
       rejectDisconnected = reject;
     });
@@ -114,29 +110,34 @@ export class TurnRunner {
         bufferedEvents.push(event);
         return;
       }
+
       if (!belongsToActiveTurn(event, activeTurn.threadId, activeTurn.turnId)) {
         return;
       }
+
       if (event.type === 'agentMessageDelta') {
         streamedText += event.delta;
       }
+
       if (event.type === 'tokenUsage') {
         tokenUsage = event.tokenUsage;
         return;
       }
+
       if (event.type === 'turnCompleted') {
         resolveCompletion(event.completion);
         return;
       }
+
       if (event.type === 'protocolError') {
         rejectCompletion(new Error(event.message));
         return;
       }
 
       if (shouldRender(event, request.outputMode)) {
-        renderAppServerEvent(event, output);
-        if (!output.openLine) {
-          workingIndicator.show();
+        this.ui.emit({ event, id: uiId, type: 'turnEvent' });
+        if (event.type === 'agentMessageDelta' && event.delta) {
+          renderedStreamedText = true;
         }
       }
     };
@@ -147,6 +148,7 @@ export class TurnRunner {
         handleEvent(event);
       }
     });
+
     const unsubscribeExit = this.client.onExit(rejectDisconnected);
 
     try {
@@ -177,28 +179,32 @@ export class TurnRunner {
         }),
         disconnected,
       ]);
+
       for (const event of bufferedEvents) {
         handleEvent(event);
       }
+
       if (activeTurn.interruptRequested && !activeTurn.interruptSent) {
         activeTurn.interruptSent = true;
         await interruptTurn(this.client, activeTurn.threadId, activeTurn.turnId);
       }
 
       const completed = await Promise.race([completion, disconnected]);
-      workingIndicator.hide();
-      finishAppServerOutput(output);
+      this.ui.emit({ id: uiId, type: 'turnFinished' });
+      displayFinished = true;
 
       const finalText = findFinalAgentMessage(completed) || streamedText;
-      if (request.outputMode === 'full' && !output.streamedText && finalText) {
-        this.terminal.write(`agent> ${finalText}\n`);
+      if (request.outputMode === 'full' && !renderedStreamedText && finalText) {
+        emitMessage(this.ui, `agent> ${finalText}\n`, 'agent');
       }
       if (completed.turn.status === 'failed') {
         throw new Error(completed.turn.error?.message || `${request.profile.role} turn failed`);
       }
+
       if (completed.turn.status === 'interrupted') {
         throw new Error(`${request.profile.role} turn was interrupted`);
       }
+
       if (!finalText) {
         throw new Error(`${request.profile.role} returned no final response`);
       }
@@ -207,8 +213,11 @@ export class TurnRunner {
     } finally {
       unsubscribeNotification();
       unsubscribeExit();
-      finishAppServerOutput(output);
-      workingIndicator.stop();
+
+      if (!displayFinished) {
+        this.ui.emit({ id: uiId, type: 'turnFinished' });
+      }
+
       this.activeTurn = undefined;
     }
   }

@@ -10,15 +10,16 @@ import {
   MULTI_AGENT_ROLES,
   type ReasoningEffort,
 } from '../types.js';
+import { emitMessage } from '../ui/output.js';
+import type { CliUi } from '../ui/protocol.js';
 import { printStatus, printWelcome } from './session-output.js';
-import type { Terminal } from './terminal.js';
 
 export type CommandResult = 'continue' | 'exit' | 'logout';
 
 export interface CommandContext {
   client: AppServerClient;
   state: CliState;
-  terminal: Terminal;
+  ui: CliUi;
 }
 
 interface CliCommand {
@@ -108,7 +109,7 @@ export async function handleCommand(
   const [name, ...args] = input.trim().split(/\s+/);
   const command = name ? COMMAND_BY_NAME.get(name) : undefined;
   if (!command) {
-    context.terminal.write(`Unknown command: ${name || input}. Run /help.\n`);
+    emitMessage(context.ui, `Unknown command: ${name || input}. Run /help.\n`, 'error');
     return 'continue';
   }
   return command.execute(context, args);
@@ -121,25 +122,27 @@ export function commandHelp(): string {
   );
 }
 
-function showHelp({ terminal }: CommandContext): CommandResult {
-  terminal.write(`${commandHelp()}\n`);
+function showHelp({ ui }: CommandContext): CommandResult {
+  emitMessage(ui, `${commandHelp()}\n`, 'system');
   return 'continue';
 }
 
-function startNewThread({ state, terminal }: CommandContext): CommandResult {
+function startNewThread({ state, ui }: CommandContext): CommandResult {
   resetConversation(state);
-  terminal.write(`Started a new ${state.agentMode}-agent conversation.\n`);
+  emitMessage(ui, `Started a new ${state.agentMode}-agent conversation.\n`, 'status');
   return 'continue';
 }
 
 async function resumeSavedThread(
-  { client, state, terminal }: CommandContext,
+  { client, state, ui }: CommandContext,
   args: string[],
 ): Promise<CommandResult> {
   const threadId = args.join(' ').trim();
   if (!threadId) {
-    terminal.write(
+    emitMessage(
+      ui,
       `Usage: /resume <thread-id>${state.conversation.threadId ? `\nCurrent: ${state.conversation.threadId}` : ''}\n`,
+      'error',
     );
     return 'continue';
   }
@@ -157,128 +160,150 @@ async function resumeSavedThread(
   resetConversation(state);
   state.conversation.threadId = resumedThreadId;
   const suffix = state.agentMode === 'multi' ? ' Worker threads will start fresh.' : '';
-  terminal.write(`Resumed ${state.agentMode}-agent thread ${resumedThreadId}.${suffix}\n`);
+  emitMessage(
+    ui,
+    `Resumed ${state.agentMode}-agent thread ${resumedThreadId}.${suffix}\n`,
+    'status',
+  );
   return 'continue';
 }
 
-function showStatus({ state, terminal }: CommandContext): CommandResult {
-  printStatus(terminal, state);
+function showStatus({ state, ui }: CommandContext): CommandResult {
+  printStatus(ui, state);
   return 'continue';
 }
 
-function changeAgentMode({ state, terminal }: CommandContext, args: string[]): CommandResult {
+function changeAgentMode({ state, ui }: CommandContext, args: string[]): CommandResult {
   if (args.length === 0) {
-    terminal.write(`Agent mode: ${state.agentMode}\n`);
+    emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
     return 'continue';
   }
   const mode = args.join(' ').trim();
   if (!isAgentMode(mode)) {
-    terminal.write('Usage: /mode <multi|single>\n');
+    emitMessage(ui, 'Usage: /mode <multi|single>\n', 'error');
     return 'continue';
   }
   if (mode === state.agentMode) {
-    terminal.write(`Agent mode is already ${mode}.\n`);
+    emitMessage(ui, `Agent mode is already ${mode}.\n`, 'status');
     return 'continue';
   }
   state.agentMode = mode;
   resetConversation(state);
-  terminal.write(`Agent mode changed to ${mode}. Started a new conversation.\n`);
+  emitMessage(ui, `Agent mode changed to ${mode}. Started a new conversation.\n`, 'status');
   return 'continue';
 }
 
-function showAgents({ state, terminal }: CommandContext): CommandResult {
+function showAgents({ state, ui }: CommandContext): CommandResult {
   const profiles = createAgentProfiles(state);
-  terminal.write(`Agent mode: ${state.agentMode}\n`);
+  emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
   if (state.agentMode === 'single') {
     const profile = profiles.agent;
-    terminal.write(
+    emitMessage(
+      ui,
       `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
+      'status',
     );
     return 'continue';
   }
   for (const role of MULTI_AGENT_ROLES) {
     const profile = profiles[role];
     const threadId = role === 'coordinator' ? state.conversation.threadId : undefined;
-    terminal.write(
+    emitMessage(
+      ui,
       `${role}: ${profile.model} (${describeEffort(state, role, profile.reasoningEffort)}), sandbox=${profile.sandbox}, thread=${threadId || (profile.ephemeral ? 'ephemeral' : 'not started')}\n`,
+      'status',
     );
   }
   if (state.conversation.lastRoute) {
     const agents = state.conversation.lastRoute.agents;
-    terminal.write(
+    emitMessage(
+      ui,
       `Last route: ${agents.length > 0 ? agents.join(', ') : 'coordinator'}; complexity=${state.conversation.lastRoute.complexity}\n`,
+      'status',
     );
   }
   return 'continue';
 }
 
-function changeModel({ state, terminal }: CommandContext, args: string[]): CommandResult {
+function changeModel({ state, ui }: CommandContext, args: string[]): CommandResult {
   if (args.length === 0) {
     if (state.agentMode === 'single') {
-      terminal.write(
+      emitMessage(
+        ui,
         `Agent: ${state.model} (reasoning: ${state.reasoningEffortOverride || DEFAULT_REASONING_EFFORT})\n`,
+        'status',
       );
       return 'continue';
     }
-    terminal.write(
+    emitMessage(
+      ui,
       `Implementer: ${state.model} (reasoning: ${state.reasoningEffortOverride || 'dynamic by complexity'})\n`,
+      'status',
     );
     return 'continue';
   }
   const settings = parseModelSettings(args);
   if (!settings) {
-    terminal.write('Usage: /model <model> [none|minimal|low|medium|high|xhigh]\n');
+    emitMessage(ui, 'Usage: /model <model> [none|minimal|low|medium|high|xhigh]\n', 'error');
     return 'continue';
   }
   state.model = settings.model;
   state.reasoningEffortOverride = settings.effort;
   resetConversation(state);
   const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
-  terminal.write(
+  emitMessage(
+    ui,
     `${label} changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
+    'status',
   );
   return 'continue';
 }
 
-function changePermissions({ state, terminal }: CommandContext, args: string[]): CommandResult {
+function changePermissions({ state, ui }: CommandContext, args: string[]): CommandResult {
   const mode = args.join(' ').trim();
   if (!mode) {
-    terminal.write(`Sandbox: ${state.sandbox}; approvals: ${state.approvalPolicy}\n`);
+    emitMessage(ui, `Sandbox: ${state.sandbox}; approvals: ${state.approvalPolicy}\n`, 'status');
     return 'continue';
   }
   if (!isSandboxMode(mode)) {
-    terminal.write('Usage: /permissions <read-only|workspace-write>\n');
+    emitMessage(ui, 'Usage: /permissions <read-only|workspace-write>\n', 'error');
     return 'continue';
   }
   state.sandbox = mode;
   resetConversation(state);
   const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
-  terminal.write(`${label} sandbox changed to ${mode}. Started a new conversation.\n`);
+  emitMessage(ui, `${label} sandbox changed to ${mode}. Started a new conversation.\n`, 'status');
   return 'continue';
 }
 
-function clearConversation({ state, terminal }: CommandContext): CommandResult {
-  terminal.clear();
+function clearConversation({ state, ui }: CommandContext): CommandResult {
+  ui.emit({ type: 'clear' });
   resetConversation(state);
-  printWelcome(terminal, state);
+  printWelcome(ui, state);
   return 'continue';
 }
 
-async function logout({ terminal }: CommandContext, args: string[]): Promise<CommandResult> {
+async function logout({ ui }: CommandContext, args: string[]): Promise<CommandResult> {
   if (args.length > 0) {
-    terminal.write('Usage: /logout\n');
+    emitMessage(ui, 'Usage: /logout\n', 'error');
     return 'continue';
   }
 
-  const answer = (await terminal.question('Log out of Codex and exit? [y/N] '))
-    .trim()
-    .toLowerCase();
-  if (answer !== 'y' && answer !== 'yes') {
-    terminal.write('Logout cancelled.\n');
+  const answer = await ui.request({
+    defaultValue: 'no',
+    options: [
+      { aliases: ['y'], label: 'Yes', value: 'yes' },
+      { aliases: ['n'], label: 'No', value: 'no' },
+    ],
+    prompt: 'Log out of Codex and exit? [y/N] ',
+    type: 'choice',
+  });
+  if (answer !== 'yes') {
+    emitMessage(ui, 'Logout cancelled.\n', 'status');
     return 'continue';
   }
 
-  terminal.write('Closing the session before logout...\n');
+  emitMessage(ui, 'Closing the session before logout...\n', 'status');
   return 'logout';
 }
 

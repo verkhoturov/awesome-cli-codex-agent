@@ -1,4 +1,3 @@
-import type { Terminal } from '../cli/terminal.js';
 import type { TurnRunner, TurnRunResult } from '../cli/turn/runner.js';
 import type {
   AgentProfile,
@@ -7,6 +6,8 @@ import type {
   RoutingDecision,
   TaskComplexity,
 } from '../types.js';
+import { emitMessage } from '../ui/output.js';
+import type { CliUi } from '../ui/protocol.js';
 import { createAgentProfiles } from './profiles.js';
 import { addUsage } from './usage.js';
 
@@ -31,15 +32,11 @@ export class WorkflowRunner {
   constructor(
     private readonly state: CliState,
     private readonly turnRunner: TurnRunner,
-    private readonly terminal: Terminal,
+    private readonly ui: CliUi,
   ) {}
 
   get isActive(): boolean {
     return this.active;
-  }
-
-  get workingIndicator() {
-    return this.turnRunner.workingIndicator;
   }
 
   interrupt(): boolean {
@@ -66,8 +63,10 @@ export class WorkflowRunner {
       this.state.conversation.threadId = routingResult.threadId;
       const route = decodeRoutingDecision(routingResult.finalText);
       this.state.conversation.lastRoute = route;
-      this.terminal.write(
+      emitMessage(
+        this.ui,
         `[coordinator:route] selected: ${route.agents.length > 0 ? route.agents.join(', ') : 'coordinator only'}; complexity=${route.complexity}\n`,
+        'workflow',
       );
 
       const routedEffort = COMPLEXITY_EFFORTS[route.complexity];
@@ -117,7 +116,7 @@ export class WorkflowRunner {
     outputSchema?: Record<string, unknown>,
     label: string = profile.role,
   ): Promise<TurnRunResult> {
-    this.terminal.write(`[${label}] ${profile.model} (${profile.reasoningEffort})\n`);
+    emitMessage(this.ui, `[${label}] ${profile.model} (${profile.reasoningEffort})\n`, 'agent');
     const result = await this.turnRunner.run({
       input,
       label,
@@ -128,7 +127,7 @@ export class WorkflowRunner {
     });
     addUsage(this.state, profile.role, result.tokenUsage?.last);
     if (outputMode !== 'full') {
-      this.terminal.write(`[${label}] completed\n`);
+      emitMessage(this.ui, `[${label}] completed\n`, 'workflow');
     }
     return result;
   }

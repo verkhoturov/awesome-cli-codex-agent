@@ -2,12 +2,15 @@ import { createAgentProfiles } from '../agents/profiles.js';
 import type { TokenUsageBreakdown } from '../app-server/protocol.js';
 import { APP_SERVER_CLIENT_INFO } from '../config.js';
 import { AGENT_ROLES, type CliState } from '../types.js';
-import type { Terminal } from './terminal.js';
+import { emitMessage } from '../ui/output.js';
+import type { CliUi } from '../ui/protocol.js';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 
-export function printWelcome(terminal: Terminal, state: CliState): void {
-  terminal.write(`
+export function printWelcome(ui: CliUi, state: CliState): void {
+  emitMessage(
+    ui,
+    `
 ----------------------------------------------------------------------------------
 
 ${APP_SERVER_CLIENT_INFO.title} (${APP_SERVER_CLIENT_INFO.version})
@@ -15,28 +18,36 @@ ${APP_SERVER_CLIENT_INFO.title} (${APP_SERVER_CLIENT_INFO.version})
 ${configurationSummary(state)}
 Run /help for commands. Ctrl+C cancels the current request or exits while idle.
 
-----------------------------------------------------------------------------------\n`);
-}
-
-export function printStatus(terminal: Terminal, state: CliState): void {
-  const threadLabel = state.agentMode === 'single' ? 'Agent thread' : 'Coordinator thread';
-  terminal.write(
-    `${configurationSummary(state)}\n${threadLabel}: ${state.conversation.threadId || 'not started'}\n`,
+----------------------------------------------------------------------------------\n`,
+    'system',
   );
 }
 
-export function printSessionSummary(terminal: Terminal, state: CliState): void {
+export function printStatus(ui: CliUi, state: CliState): void {
+  const threadLabel = state.agentMode === 'single' ? 'Agent thread' : 'Coordinator thread';
+  emitMessage(
+    ui,
+    `${configurationSummary(state)}\n${threadLabel}: ${state.conversation.threadId || 'not started'}\n`,
+    'status',
+  );
+}
+
+export function printSessionSummary(ui: CliUi, state: CliState): void {
   const usageByRole = state.conversation.usageByRole;
   const total = sumUsage(Object.values(usageByRole));
-  terminal.write(
+  emitMessage(
+    ui,
     `\nToken usage: total=${formatNumber(total.totalTokens)} input=${formatNumber(total.inputTokens)}${total.cachedInputTokens ? ` (+ ${formatNumber(total.cachedInputTokens)} cached)` : ''} output=${formatNumber(total.outputTokens)}\n`,
+    'status',
   );
 
   for (const role of AGENT_ROLES) {
     const usage = usageByRole[role];
     if (usage) {
-      terminal.write(
+      emitMessage(
+        ui,
         `  ${role}: total=${formatNumber(usage.totalTokens)} input=${formatNumber(usage.inputTokens)} output=${formatNumber(usage.outputTokens)}\n`,
+        'status',
       );
     }
   }
@@ -48,8 +59,10 @@ export function printSessionSummary(terminal: Terminal, state: CliState): void {
     const effort = state.reasoningEffortOverride
       ? ` --reasoning-effort ${state.reasoningEffortOverride}`
       : '';
-    terminal.write(
+    emitMessage(
+      ui,
       `To continue this ${state.agentMode}-agent session, run command "npm run resume -- ${threadId} --agent-mode ${state.agentMode} --model ${model}${effort} --sandbox ${state.sandbox} -C ${cwd}"\n`,
+      'status',
     );
   }
 }

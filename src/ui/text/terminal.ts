@@ -18,18 +18,7 @@ class TerminalOutput extends Writable {
   }
 }
 
-export interface Terminal {
-  readonly isTTY: boolean;
-  clear(): void;
-  close(): void;
-  onInterrupt(handler: () => void): () => void;
-  question(prompt: string): Promise<string>;
-  questionSecret(prompt: string): Promise<string>;
-  write(value: string): void;
-  writeError(value: string): void;
-}
-
-export class NodeTerminal implements Terminal {
+export class TextTerminal {
   private closed = false;
   private readonly interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   private readonly output = new TerminalOutput();

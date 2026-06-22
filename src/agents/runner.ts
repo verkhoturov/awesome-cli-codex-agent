@@ -1,6 +1,6 @@
-import type { Terminal } from '../cli/terminal.js';
 import type { TurnRunner } from '../cli/turn/runner.js';
 import type { CliState } from '../types.js';
+import type { CliUi } from '../ui/protocol.js';
 import { SingleAgentRunner } from './single-agent-runner.js';
 import { WorkflowRunner } from './workflow-runner.js';
 
@@ -11,14 +11,10 @@ export class AgentRunner {
   constructor(
     private readonly state: CliState,
     private readonly turnRunner: TurnRunner,
-    terminal: Terminal,
+    ui: CliUi,
   ) {
-    this.singleAgentRunner = new SingleAgentRunner(state, turnRunner, terminal);
-    this.workflowRunner = new WorkflowRunner(state, turnRunner, terminal);
-  }
-
-  get workingIndicator() {
-    return this.turnRunner.workingIndicator;
+    this.singleAgentRunner = new SingleAgentRunner(state, turnRunner, ui);
+    this.workflowRunner = new WorkflowRunner(state, turnRunner, ui);
   }
 
   interrupt(): boolean {
