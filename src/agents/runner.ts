@@ -1,6 +1,6 @@
 import type { TurnRunner } from '../cli/turn/runner.js';
 import type { CliState } from '../types.js';
-import type { CliUi } from '../ui/protocol.js';
+import type { CliUi } from '../ui/contracts.js';
 import { SingleAgentRunner } from './single-agent-runner.js';
 import { WorkflowRunner } from './workflow-runner.js';
 

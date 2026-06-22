@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-import { ensureCodexHome } from '../utils/codex-home.js';
+import { ensureCodexHome } from '../utils/ensure-codex-home.js';
 import type { NativeAuthenticationSelection } from './types.js';
 
 const CREDENTIAL_STORE_OVERRIDE = 'cli_auth_credentials_store="file"';
@@ -10,7 +10,7 @@ export class NativeCodexAuth {
 
   login(selection: NativeAuthenticationSelection): void {
     ensureCodexHome(this.codexHome);
-    
+
     const args = ['login', '-c', CREDENTIAL_STORE_OVERRIDE];
 
     if (selection.method === 'device-code') {

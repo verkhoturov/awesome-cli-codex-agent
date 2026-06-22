@@ -1,4 +1,4 @@
-import type { TokenUsageBreakdown } from '../app-server/protocol.js';
+import type { TokenUsageBreakdown } from '../app-server/types.js';
 import type { AgentRole, CliState } from '../types.js';
 
 export function addUsage(

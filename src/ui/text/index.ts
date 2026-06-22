@@ -1,4 +1,4 @@
-import type { CliInputRequest, CliUi, CliUiEvent } from '../protocol.js';
+import type { CliInputRequest, CliUi, CliUiEvent } from '../contracts.js';
 import { TextTerminal } from './terminal.js';
 import {
   createTextTurnOutputState,

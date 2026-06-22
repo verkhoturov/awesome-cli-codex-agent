@@ -1,9 +1,9 @@
 import { createAgentProfiles } from '../agents/profiles.js';
-import type { TokenUsageBreakdown } from '../app-server/protocol.js';
+import type { TokenUsageBreakdown } from '../app-server/types.js';
 import { APP_SERVER_CLIENT_INFO } from '../config.js';
 import { AGENT_ROLES, type CliState } from '../types.js';
+import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
-import type { CliUi } from '../ui/protocol.js';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 

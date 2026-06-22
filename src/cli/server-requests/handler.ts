@@ -1,10 +1,10 @@
-import type { RpcRequest } from '../../app-server/protocol.js';
 import {
   type AppServerRequest,
   decodeAppServerRequest,
   type UserInputQuestion,
 } from '../../app-server/requests.js';
-import type { CliUi } from '../../ui/protocol.js';
+import type { RpcRequest } from '../../app-server/types.js';
+import type { CliUi } from '../../ui/contracts.js';
 
 export async function handleServerRequest(request: RpcRequest, ui: CliUi): Promise<unknown> {
   const decoded = decodeAppServerRequest(request);

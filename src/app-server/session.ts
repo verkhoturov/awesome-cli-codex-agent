@@ -1,6 +1,6 @@
 import type { ReasoningEffort, SandboxMode } from '../types.js';
 import type { AppServerClient } from './client.js';
-import type { ThreadResumeResponse, ThreadStartResponse, TurnStartResponse } from './protocol.js';
+import type { ThreadResumeResponse, ThreadStartResponse, TurnStartResponse } from './types.js';
 
 export interface ThreadSettings {
   approvalPolicy: 'never' | 'on-request' | 'untrusted';

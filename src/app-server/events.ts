@@ -5,7 +5,7 @@ import type {
   ThreadTokenUsage,
   TokenUsageBreakdown,
   TurnCompletedParams,
-} from './protocol.js';
+} from './types.js';
 
 interface EventScope {
   threadId?: string;

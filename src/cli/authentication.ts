@@ -4,7 +4,7 @@ import {
   type NativeAuthenticationMethod,
   type NativeAuthenticationSelection,
 } from '../auth/types.js';
-import type { CliUi } from '../ui/protocol.js';
+import type { CliUi } from '../ui/contracts.js';
 
 const AUTHENTICATION_OPTIONS = [
   { label: 'Sign in with ChatGPT in a browser', value: 'browser' },
@@ -74,7 +74,7 @@ async function promptForAuthentication(ui: CliUi): Promise<NativeAuthenticationS
 
 async function requireSecret(ui: CliUi, prompt: string): Promise<string> {
   const secret = (await ui.request({ prompt, type: 'secret' })).trim();
-  
+
   if (!secret) {
     throw new Error('Authentication credential is required');
   }

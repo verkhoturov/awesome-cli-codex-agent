@@ -2,7 +2,7 @@ import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { createInterface, type Interface } from 'node:readline';
 
 import { APP_SERVER_CLIENT_INFO } from '../config.js';
-import { ensureCodexHome } from '../utils/codex-home.js';
+import { ensureCodexHome } from '../utils/ensure-codex-home.js';
 import {
   type GetAccountResponse,
   isRpcNotification,
@@ -14,7 +14,7 @@ import {
   type RpcMessage,
   type RpcRequest,
   type ServerRequestHandler,
-} from './protocol.js';
+} from './types.js';
 
 interface PendingRequest {
   reject: (error: Error) => void;

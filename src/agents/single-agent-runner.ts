@@ -1,7 +1,7 @@
 import type { TurnRunner } from '../cli/turn/runner.js';
 import type { CliState } from '../types.js';
+import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
-import type { CliUi } from '../ui/protocol.js';
 import { createAgentProfiles } from './profiles.js';
 import { addUsage } from './usage.js';
 

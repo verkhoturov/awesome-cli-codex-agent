@@ -10,8 +10,8 @@ import {
   MULTI_AGENT_ROLES,
   type ReasoningEffort,
 } from '../types.js';
+import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
-import type { CliUi } from '../ui/protocol.js';
 import { printStatus, printWelcome } from './session-output.js';
 
 export type CommandResult = 'continue' | 'exit' | 'logout';
@@ -157,45 +157,58 @@ async function resumeSavedThread(
     reasoningEffort: profile.reasoningEffort,
     sandbox: profile.sandbox,
   });
+
   resetConversation(state);
   state.conversation.threadId = resumedThreadId;
+
   const suffix = state.agentMode === 'multi' ? ' Worker threads will start fresh.' : '';
   emitMessage(
     ui,
     `Resumed ${state.agentMode}-agent thread ${resumedThreadId}.${suffix}\n`,
     'status',
   );
+
   return 'continue';
 }
 
 function showStatus({ state, ui }: CommandContext): CommandResult {
   printStatus(ui, state);
+
   return 'continue';
 }
 
 function changeAgentMode({ state, ui }: CommandContext, args: string[]): CommandResult {
   if (args.length === 0) {
     emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
+
     return 'continue';
   }
+
   const mode = args.join(' ').trim();
+
   if (!isAgentMode(mode)) {
     emitMessage(ui, 'Usage: /mode <multi|single>\n', 'error');
+
     return 'continue';
   }
+
   if (mode === state.agentMode) {
     emitMessage(ui, `Agent mode is already ${mode}.\n`, 'status');
+
     return 'continue';
   }
+
   state.agentMode = mode;
   resetConversation(state);
   emitMessage(ui, `Agent mode changed to ${mode}. Started a new conversation.\n`, 'status');
+
   return 'continue';
 }
 
 function showAgents({ state, ui }: CommandContext): CommandResult {
   const profiles = createAgentProfiles(state);
   emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
+
   if (state.agentMode === 'single') {
     const profile = profiles.agent;
     emitMessage(
@@ -205,6 +218,7 @@ function showAgents({ state, ui }: CommandContext): CommandResult {
     );
     return 'continue';
   }
+
   for (const role of MULTI_AGENT_ROLES) {
     const profile = profiles[role];
     const threadId = role === 'coordinator' ? state.conversation.threadId : undefined;
@@ -214,6 +228,7 @@ function showAgents({ state, ui }: CommandContext): CommandResult {
       'status',
     );
   }
+
   if (state.conversation.lastRoute) {
     const agents = state.conversation.lastRoute.agents;
     emitMessage(
@@ -222,6 +237,7 @@ function showAgents({ state, ui }: CommandContext): CommandResult {
       'status',
     );
   }
+
   return 'continue';
 }
 
@@ -242,37 +258,46 @@ function changeModel({ state, ui }: CommandContext, args: string[]): CommandResu
     );
     return 'continue';
   }
+
   const settings = parseModelSettings(args);
+
   if (!settings) {
     emitMessage(ui, 'Usage: /model <model> [none|minimal|low|medium|high|xhigh]\n', 'error');
     return 'continue';
   }
+
   state.model = settings.model;
   state.reasoningEffortOverride = settings.effort;
   resetConversation(state);
   const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
+
   emitMessage(
     ui,
     `${label} changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
     'status',
   );
+
   return 'continue';
 }
 
 function changePermissions({ state, ui }: CommandContext, args: string[]): CommandResult {
   const mode = args.join(' ').trim();
+
   if (!mode) {
     emitMessage(ui, `Sandbox: ${state.sandbox}; approvals: ${state.approvalPolicy}\n`, 'status');
     return 'continue';
   }
+
   if (!isSandboxMode(mode)) {
     emitMessage(ui, 'Usage: /permissions <read-only|workspace-write>\n', 'error');
     return 'continue';
   }
+
   state.sandbox = mode;
   resetConversation(state);
   const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
   emitMessage(ui, `${label} sandbox changed to ${mode}. Started a new conversation.\n`, 'status');
+
   return 'continue';
 }
 
@@ -280,12 +305,14 @@ function clearConversation({ state, ui }: CommandContext): CommandResult {
   ui.emit({ type: 'clear' });
   resetConversation(state);
   printWelcome(ui, state);
+
   return 'continue';
 }
 
 async function logout({ ui }: CommandContext, args: string[]): Promise<CommandResult> {
   if (args.length > 0) {
     emitMessage(ui, 'Usage: /logout\n', 'error');
+
     return 'continue';
   }
 
@@ -298,12 +325,15 @@ async function logout({ ui }: CommandContext, args: string[]): Promise<CommandRe
     prompt: 'Log out of Codex and exit? [y/N] ',
     type: 'choice',
   });
+
   if (answer !== 'yes') {
     emitMessage(ui, 'Logout cancelled.\n', 'status');
+
     return 'continue';
   }
 
   emitMessage(ui, 'Closing the session before logout...\n', 'status');
+
   return 'logout';
 }
 
@@ -319,9 +349,11 @@ function describeEffort(
   if (role === 'analyzer') {
     return `dynamic by complexity, normal=${configured}`;
   }
+
   if (role === 'implementer' && !state.reasoningEffortOverride) {
     return `dynamic by complexity, normal=${configured}`;
   }
+
   return role === 'implementer' ? `${configured}, fixed override` : configured;
 }
 
@@ -329,6 +361,7 @@ function describePrimaryEffort(state: CliState): string {
   if (state.reasoningEffortOverride) {
     return `${state.reasoningEffortOverride}, fixed reasoning`;
   }
+
   return state.agentMode === 'single'
     ? `${DEFAULT_REASONING_EFFORT} reasoning`
     : 'dynamic reasoning';
@@ -344,12 +377,15 @@ function parseModelSettings(args: string[]): ModelSettings | undefined {
   if (!model || args.length > 2) {
     return undefined;
   }
+
   let parsedEffort: ReasoningEffort | undefined;
+
   if (effort) {
     if (!isReasoningEffort(effort)) {
       return undefined;
     }
     parsedEffort = effort;
   }
+
   return { effort: parsedEffort, model };
 }

@@ -1,4 +1,4 @@
-import type { CliUi, UiMessageKind } from './protocol.js';
+import type { CliUi, UiMessageKind } from './contracts.js';
 
 export function emitMessage(
   ui: CliUi,

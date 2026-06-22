@@ -4,7 +4,7 @@ import { CodexAppServerClient } from './app-server/client.js';
 import { NativeCodexAuth } from './auth/native-codex-auth.js';
 import { ensureCodexAuthentication } from './cli/authentication.js';
 import { runCli } from './cli/index.js';
-import { usage } from './config.js';
+import { usage } from './cli/usage.js';
 import { emitMessage } from './ui/output.js';
 import { TextCliUi } from './ui/text/index.js';
 import { checkCodexCli } from './utils/check-codex-cli.js';
@@ -21,6 +21,7 @@ async function main(): Promise<void> {
   const codexVersion = checkCodexCli();
   const nativeAuthentication = new NativeCodexAuth(state.codexHome);
   const ui = new TextCliUi();
+
   try {
     const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);
     emitMessage(
@@ -33,7 +34,9 @@ async function main(): Promise<void> {
       codexHome: state.codexHome,
       cwd: state.cwd,
     });
+
     let logout = false;
+
     try {
       await appServer.connect();
       logout = (await runCli(state, appServer, ui, resumeThreadId)) === 'logout';

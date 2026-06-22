@@ -1,10 +1,10 @@
 import type { AppServerClient } from '../../app-server/client.js';
 import { type AppServerEvent, decodeAppServerEvent } from '../../app-server/events.js';
-import type { ThreadTokenUsage, TurnCompletedParams } from '../../app-server/protocol.js';
 import { interruptTurn, startThread, startTurn } from '../../app-server/session.js';
+import type { ThreadTokenUsage, TurnCompletedParams } from '../../app-server/types.js';
 import type { AgentProfile, CliState } from '../../types.js';
+import type { CliUi } from '../../ui/contracts.js';
 import { emitMessage } from '../../ui/output.js';
-import type { CliUi } from '../../ui/protocol.js';
 
 export type TurnOutputMode = 'activity' | 'full' | 'silent';
 
@@ -47,7 +47,7 @@ export class TurnRunner {
 
   interrupt(): boolean {
     const activeTurn = this.activeTurn;
-    
+
     if (!activeTurn) {
       return false;
     }
@@ -93,7 +93,7 @@ export class TurnRunner {
 
     let resolveCompletion: (params: TurnCompletedParams) => void = () => undefined;
     let rejectCompletion: (error: Error) => void = () => undefined;
-    
+
     const completion = new Promise<TurnCompletedParams>((resolve, reject) => {
       resolveCompletion = resolve;
       rejectCompletion = reject;

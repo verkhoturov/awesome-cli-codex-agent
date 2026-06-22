@@ -1,4 +1,4 @@
-import type { RpcRequest } from './protocol.js';
+import type { RpcRequest } from './types.js';
 
 export interface UserInputOption {
   label: string;

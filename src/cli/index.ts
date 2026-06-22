@@ -1,8 +1,8 @@
 import { AgentRunner } from '../agents/runner.js';
 import type { AppServerClient } from '../app-server/client.js';
 import type { CliState } from '../types.js';
+import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
-import type { CliUi } from '../ui/protocol.js';
 import { type CommandResult, handleCommand } from './commands.js';
 import { handleServerRequest } from './server-requests/handler.js';
 import { PromptQueue } from './server-requests/queue.js';
