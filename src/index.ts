@@ -7,7 +7,6 @@ import { runCli } from './cli/index.js';
 import { usage } from './cli/usage.js';
 import { InkCliUi } from './ui/ink/index.js';
 import { emitMessage } from './ui/output.js';
-import { TextCliUi } from './ui/text/index.js';
 import { checkCodexCli } from './utils/check-codex-cli.js';
 import { parseArgs } from './utils/cli-arguments.js';
 
@@ -19,9 +18,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (!process.stdin.isTTY) {
+    throw new Error('Interactive TTY input is required');
+  }
+
   const codexVersion = checkCodexCli();
   const nativeAuthentication = new NativeCodexAuth(state.codexHome);
-  const ui = process.stdin.isTTY && process.stdout.isTTY ? new InkCliUi() : new TextCliUi();
+  const ui = new InkCliUi();
 
   try {
     const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);
