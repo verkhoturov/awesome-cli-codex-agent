@@ -5,6 +5,7 @@ import { NativeCodexAuth } from './auth/native-codex-auth.js';
 import { ensureCodexAuthentication } from './cli/authentication.js';
 import { runCli } from './cli/index.js';
 import { usage } from './cli/usage.js';
+import { InkCliUi } from './ui/ink/index.js';
 import { emitMessage } from './ui/output.js';
 import { TextCliUi } from './ui/text/index.js';
 import { checkCodexCli } from './utils/check-codex-cli.js';
@@ -20,7 +21,7 @@ async function main(): Promise<void> {
 
   const codexVersion = checkCodexCli();
   const nativeAuthentication = new NativeCodexAuth(state.codexHome);
-  const ui = new TextCliUi();
+  const ui = process.stdin.isTTY && process.stdout.isTTY ? new InkCliUi() : new TextCliUi();
 
   try {
     const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);

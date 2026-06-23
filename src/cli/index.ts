@@ -43,7 +43,7 @@ export async function runCli(
     while (!exiting) {
       let input: string;
       try {
-        input = (await ui.request({ prompt: '\nyou> ', type: 'text' })).trim();
+        input = (await ui.request({ history: true, prompt: '\nyou> ', type: 'text' })).trim();
       } catch {
         break;
       }

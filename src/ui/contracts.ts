@@ -25,7 +25,7 @@ export interface CliChoiceOption {
 }
 
 export type CliInputRequest =
-  | { prompt: string; type: 'text' }
+  | { history?: boolean; prompt: string; type: 'text' }
   | { prompt: string; type: 'secret' }
   | {
       defaultValue?: string;

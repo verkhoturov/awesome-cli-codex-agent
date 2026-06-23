@@ -1,4 +1,5 @@
 import type { CliInputRequest, CliUi, CliUiEvent } from '../contracts.js';
+import { resolveInput } from '../resolve-input.js';
 import { TextTerminal } from './terminal.js';
 import {
   createTextTurnOutputState,
@@ -128,22 +129,7 @@ export class TextCliUi implements CliUi {
           this.terminal.write(`  ${index + 1}. ${option.label}\n`);
         });
       }
-      const answer = (await this.terminal.question(request.prompt)).trim();
-      if (!answer && request.defaultValue !== undefined) {
-        return request.defaultValue;
-      }
-      const selectedIndex = Number.parseInt(answer, 10);
-      if (!Number.isNaN(selectedIndex)) {
-        const selected = request.options[selectedIndex - 1];
-        if (selected) {
-          return selected.value;
-        }
-      }
-      const normalized = answer.toLowerCase();
-      const selected = request.options.find(option =>
-        [option.value, ...(option.aliases || [])].some(value => value.toLowerCase() === normalized),
-      );
-      return selected?.value || answer;
+      return resolveInput(request, await this.terminal.question(request.prompt));
     } finally {
       this.showIndicators(visibleTurns);
     }
