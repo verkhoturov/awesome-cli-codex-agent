@@ -5,6 +5,7 @@ import {
 } from '../../app-server/requests.js';
 import type { RpcRequest } from '../../app-server/types.js';
 import type { CliUi } from '../../ui/contracts.js';
+import { assertNever } from '../../utils/assert-never.js';
 
 export async function handleServerRequest(request: RpcRequest, ui: CliUi): Promise<unknown> {
   const decoded = decodeAppServerRequest(request);
@@ -24,7 +25,7 @@ export async function handleServerRequest(request: RpcRequest, ui: CliUi): Promi
     case 'mcpElicitation':
       return handleMcpElicitation(decoded, ui);
     default:
-      return assertNever(decoded);
+      return assertNever(decoded, 'Unhandled app-server request');
   }
 }
 
@@ -134,8 +135,4 @@ async function requestApproval(
     type: 'choice',
   });
   return answer === 'accept' || answer === 'acceptForSession' ? answer : 'decline';
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unhandled app-server request: ${JSON.stringify(value)}`);
 }

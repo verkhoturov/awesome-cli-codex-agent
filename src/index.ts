@@ -11,7 +11,7 @@ import { checkCodexCli } from './utils/check-codex-cli.js';
 import { parseArgs } from './utils/cli-arguments.js';
 
 async function main(): Promise<void> {
-  const { forceLogin, help, resumeThreadId, state } = parseArgs(process.argv.slice(2));
+  const { forceLogin, help, resumeThreadId, state, uiDebug } = parseArgs(process.argv.slice(2));
 
   if (help) {
     process.stdout.write(`${usage()}\n`);
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
 
   const codexVersion = checkCodexCli();
   const nativeAuthentication = new NativeCodexAuth(state.codexHome);
-  const ui = new InkCliUi();
+  const ui = new InkCliUi({ uiDebug });
 
   try {
     const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);

@@ -1,5 +1,6 @@
 import type { RenderableAppServerEvent } from '../../app-server/events.js';
 import type { FileChange, ThreadItem } from '../../app-server/types.js';
+import { assertNever } from '../../utils/assert-never.js';
 import type { TurnBlockKind, TurnView } from './model.js';
 
 export function projectTurnEvent(turn: TurnView, event: RenderableAppServerEvent): TurnView {
@@ -21,7 +22,7 @@ export function projectTurnEvent(turn: TurnView, event: RenderableAppServerEvent
     case 'warning':
       return appendBlock(turn, 'warning', `[warning] ${event.message}`);
     default:
-      return assertNever(event);
+      return assertNever(event, 'Unhandled Ink turn event');
   }
 }
 
@@ -118,8 +119,4 @@ function appendBlock(turn: TurnView, kind: TurnBlockKind, text: string): TurnVie
   }
   const nextId = (turn.blocks.at(-1)?.id || 0) + 1;
   return { ...turn, blocks: [...turn.blocks, { id: nextId, kind, text }] };
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unhandled Ink turn event: ${JSON.stringify(value)}`);
 }

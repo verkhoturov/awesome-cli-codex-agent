@@ -1,3 +1,4 @@
+import { assertNever } from '../../utils/assert-never.js';
 import type { CliInputRequest, CliUiEvent, UiMessageKind } from '../contracts.js';
 import type { HistoryEntry, InkUiSnapshot, TurnBlockKind } from './model.js';
 import { appendTurnBlock, projectTurnEvent } from './turn-projector.js';
@@ -75,7 +76,7 @@ export class InkUiStore {
         this.finishTurn(event.id);
         return;
       default:
-        assertNever(event);
+        assertNever(event, 'Unhandled Ink UI event');
     }
   }
 
@@ -245,8 +246,4 @@ function messageKindToTurnKind(kind: UiMessageKind): TurnBlockKind {
     return 'answer';
   }
   return 'status';
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unhandled Ink UI event: ${JSON.stringify(value)}`);
 }

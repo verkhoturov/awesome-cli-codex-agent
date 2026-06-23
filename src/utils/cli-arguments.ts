@@ -25,6 +25,7 @@ export interface ParsedArgs {
   help: boolean;
   resumeThreadId?: string;
   state: CliState;
+  uiDebug: boolean;
 }
 
 export function parseArgs(args: string[]): ParsedArgs {
@@ -36,6 +37,7 @@ export function parseArgs(args: string[]): ParsedArgs {
   let sandbox: SandboxMode = DEFAULT_SANDBOX;
   let forceLogin = false;
   let help = false;
+  let uiDebug = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -47,6 +49,11 @@ export function parseArgs(args: string[]): ParsedArgs {
 
     if (argument === '--login') {
       forceLogin = true;
+      continue;
+    }
+
+    if (argument === '--ui-debug') {
+      uiDebug = true;
       continue;
     }
 
@@ -118,6 +125,7 @@ export function parseArgs(args: string[]): ParsedArgs {
       reasoningEffortOverride,
       sandbox,
     },
+    uiDebug,
   };
 }
 

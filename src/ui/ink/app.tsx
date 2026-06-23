@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { HistoryEntryView } from './components/history.js';
 import { Prompt } from './components/prompt.js';
 import { Turn } from './components/turn.js';
+import { Box } from './components/common/Box.js';
 import type { InkUiStore } from './store.js';
 
 interface InkAppProps {
@@ -21,7 +22,7 @@ export function InkApp({ onInterrupt, onSubmit, store }: InkAppProps) {
   });
 
   return (
-    <>
+    <Box debugLabel='App'>
       <Static key={snapshot.staticGeneration} items={snapshot.history}>
         {entry => <HistoryEntryView key={entry.id} entry={entry} />}
       </Static>
@@ -34,6 +35,6 @@ export function InkApp({ onInterrupt, onSubmit, store }: InkAppProps) {
           prompt={snapshot.prompt}
         />
       ) : null}
-    </>
+    </Box>
   );
 }

@@ -1,8 +1,10 @@
 import { PasswordInput, TextInput } from '@inkjs/ui';
-import { Box, Text, useInput } from 'ink';
+import { useInput } from 'ink';
 import { useState } from 'react';
 
 import type { PromptView } from '../model.js';
+import { Box } from './common/Box.js';
+import { Text } from './common/Text.js';
 
 interface PromptProps {
   history: string[];
@@ -53,20 +55,27 @@ export function Prompt({ history, onSubmit, prompt }: PromptProps) {
   const promptText = request.prompt.replace(/^\n/u, '');
 
   return (
-    <Box flexDirection="column" marginTop={request.prompt.startsWith('\n') ? 1 : 0}>
+    <Box
+      debugLabel={`Prompt request=${request.type}`}
+      flexDirection="column"
+      marginTop={request.prompt.startsWith('\n') ? 1 : 0}>
       {request.type === 'choice' && request.description ? (
-        <Text>{request.description.replace(/\n+$/u, '')}</Text>
+        <Text debugLabel="Prompt choice description">
+          {request.description.replace(/\n+$/u, '')}
+        </Text>
       ) : null}
       {request.type === 'choice' && request.displayOptions
         ? request.options.map((option, index) => (
-            <Text key={`${option.value}-${index}`}>
+            <Text debugLabel="Prompt choice option" key={`${option.value}-${index}`}>
               {'  '}
               {index + 1}. {option.label}
             </Text>
           ))
         : null}
-      <Box>
-        <Text color="blue">{promptText}</Text>
+      <Box debugLabel="Prompt input row" flexDirection='row'>
+        <Text color="blue">
+          {promptText}
+        </Text>
         {request.type === 'secret' ? (
           <PasswordInput onChange={handleChange} onSubmit={answer => onSubmit(prompt.id, answer)} />
         ) : (
