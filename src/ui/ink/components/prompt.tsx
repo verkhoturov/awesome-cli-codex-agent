@@ -1,5 +1,5 @@
+import { PasswordInput, TextInput } from '@inkjs/ui';
 import { Box, Text, useInput } from 'ink';
-import TextInput from 'ink-text-input';
 import { useState } from 'react';
 
 import type { PromptView } from '../model.js';
@@ -15,7 +15,8 @@ export function Prompt({ history, onSubmit, prompt }: PromptProps) {
   const [value, setValue] = useState('');
   const [draft, setDraft] = useState('');
   const [historyIndex, setHistoryIndex] = useState(history.length);
-  
+  const [inputRevision, setInputRevision] = useState(0);
+
   const usesHistory = request.type === 'text' && request.history;
 
   useInput(
@@ -30,10 +31,12 @@ export function Prompt({ history, onSubmit, prompt }: PromptProps) {
         const nextIndex = Math.max(0, historyIndex - 1);
         setHistoryIndex(nextIndex);
         setValue(history[nextIndex] || '');
+        setInputRevision(revision => revision + 1);
       } else if (key.downArrow) {
         const nextIndex = Math.min(history.length, historyIndex + 1);
         setHistoryIndex(nextIndex);
         setValue(nextIndex === history.length ? draft : history[nextIndex] || '');
+        setInputRevision(revision => revision + 1);
       }
     },
     { isActive: Boolean(usesHistory) },
@@ -64,14 +67,16 @@ export function Prompt({ history, onSubmit, prompt }: PromptProps) {
         : null}
       <Box>
         <Text color="blue">{promptText}</Text>
-        <TextInput
-          focus
-          highlightPastedText
-          mask={request.type === 'secret' ? '*' : undefined}
-          onChange={handleChange}
-          onSubmit={answer => onSubmit(prompt.id, answer)}
-          value={value}
-        />
+        {request.type === 'secret' ? (
+          <PasswordInput onChange={handleChange} onSubmit={answer => onSubmit(prompt.id, answer)} />
+        ) : (
+          <TextInput
+            key={inputRevision}
+            defaultValue={value}
+            onChange={handleChange}
+            onSubmit={answer => onSubmit(prompt.id, answer)}
+          />
+        )}
       </Box>
     </Box>
   );
