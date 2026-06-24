@@ -10,7 +10,7 @@ import {
   MULTI_AGENT_ROLES,
   type ReasoningEffort,
 } from '../types.js';
-import type { CliUi } from '../ui/contracts.js';
+import type { CliTextSuggestion, CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
 import { printStatus, printWelcome } from './session-output.js';
 
@@ -122,6 +122,20 @@ export function commandHelp(): string {
   );
 }
 
+export function commandSuggestions(): CliTextSuggestion[] {
+  return COMMANDS.map(command => ({
+    aliases: command.names.slice(1),
+    description: command.description,
+    label: command.usage,
+    value: commandValue(command),
+  }));
+}
+
+function commandValue(command: CliCommand): string {
+  const name = command.names[0];
+  return command.usage.includes(' ') ? `${name} ` : name;
+}
+
 function showHelp({ ui }: CommandContext): CommandResult {
   emitMessage(ui, `${commandHelp()}\n`, 'system');
   return 'continue';
@@ -146,6 +160,7 @@ async function resumeSavedThread(
     );
     return 'continue';
   }
+  
   const profiles = createAgentProfiles(state);
   const profile = state.agentMode === 'single' ? profiles.agent : profiles.coordinator;
   const resumedThreadId = await resumeThread(client, threadId, {

@@ -13,12 +13,71 @@ interface TurnProps {
 export function Turn({ active = false, turn }: TurnProps) {
   return (
     <Box debugLabel={`Turn active=${active}`} flexDirection="column">
-      {turn.blocks.map(block => (
-        <TurnBlockView key={block.id} block={block} />
-      ))}
+      {renderTurnBlocks(turn, active)}
       {active ? <WorkingStatus turn={turn} /> : null}
     </Box>
   );
+}
+
+function renderTurnBlocks(turn: TurnView, active: boolean) {
+  const activityBlocks = turn.blocks.filter(block => block.kind === 'activity');
+  let renderedActivityGroup = false;
+
+  return turn.blocks.map(block => {
+    if (block.kind === 'activity') {
+      if (renderedActivityGroup) {
+        return null;
+      }
+
+      renderedActivityGroup = true;
+      return (
+        <ActivityGroup
+          active={active}
+          blocks={activityBlocks}
+          expanded={turn.activityExpanded}
+          key="activity-group"
+        />
+      );
+    }
+
+    return <TurnBlockView key={block.id} block={block} />;
+  });
+}
+
+interface ActivityGroupProps {
+  active: boolean;
+  blocks: TurnBlock[];
+  expanded: boolean;
+}
+
+function ActivityGroup({ active, blocks, expanded }: ActivityGroupProps) {
+  const label = activityGroupLabel(blocks);
+  const hint = active ? ` - press A to ${expanded ? 'collapse' : 'expand'}` : '';
+
+  if (!expanded) {
+    return (
+      <Text color="cyan" debugLabel="TurnBlockView case=activity group expanded=false">
+        {label} ({blocks.length}) collapsed{hint}
+      </Text>
+    );
+  }
+
+  return (
+    <Box debugLabel="TurnBlockView case=activity group expanded=true" flexDirection="column">
+      <Text color="cyan" debugLabel="TurnBlockView case=activity group header">
+        {label} ({blocks.length}) expanded{hint}
+      </Text>
+      {blocks.map(block => (
+        <Text color="cyan" debugLabel="TurnBlockView case=activity item" key={block.id}>
+          {block.text}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
+function activityGroupLabel(blocks: ActivityGroupProps['blocks']): string {
+  return blocks.every(block => block.text.startsWith('[command]')) ? 'Commands' : 'Actions';
 }
 
 function TurnBlockView({ block }: { block: TurnBlock }) {

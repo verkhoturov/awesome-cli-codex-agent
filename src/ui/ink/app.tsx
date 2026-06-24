@@ -1,9 +1,9 @@
 import { Static, useInput } from 'ink';
 import { useSyncExternalStore } from 'react';
+import { Box } from './components/common/Box.js';
 import { HistoryEntryView } from './components/history.js';
 import { Prompt } from './components/prompt.js';
 import { Turn } from './components/turn.js';
-import { Box } from './components/common/Box.js';
 import type { InkUiStore } from './store.js';
 
 interface InkAppProps {
@@ -18,11 +18,16 @@ export function InkApp({ onInterrupt, onSubmit, store }: InkAppProps) {
   useInput((input, key) => {
     if (key.ctrl && input === 'c') {
       onInterrupt();
+      return;
+    }
+
+    if (input === 'a' && snapshot.activeTurn && !snapshot.prompt) {
+      store.toggleActiveTurnActivity();
     }
   });
 
   return (
-    <Box debugLabel='App'>
+    <Box debugLabel="App">
       <Static key={snapshot.staticGeneration} items={snapshot.history}>
         {entry => <HistoryEntryView key={entry.id} entry={entry} />}
       </Static>

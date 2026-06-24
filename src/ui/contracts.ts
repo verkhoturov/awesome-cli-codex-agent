@@ -24,8 +24,15 @@ export interface CliChoiceOption {
   value: string;
 }
 
+export interface CliTextSuggestion {
+  aliases?: string[];
+  description: string;
+  label: string;
+  value: string;
+}
+
 export type CliInputRequest =
-  | { history?: boolean; prompt: string; type: 'text' }
+  | { history?: boolean; prompt: string; suggestions?: CliTextSuggestion[]; type: 'text' }
   | { prompt: string; type: 'secret' }
   | {
       defaultValue?: string;

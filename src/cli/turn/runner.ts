@@ -194,13 +194,16 @@ export class TurnRunner {
       displayFinished = true;
 
       const finalText = findFinalAgentMessage(completed) || streamedText;
+
       if (request.outputMode === 'full' && !renderedStreamedText && finalText) {
         emitMessage(this.ui, `agent> ${finalText}\n`, 'agent');
       }
+
       if (completed.turn.status === 'failed') {
         throw new Error(completed.turn.error?.message || `${request.profile.role} turn failed`);
       }
 
+      
       if (completed.turn.status === 'interrupted') {
         throw new Error(`${request.profile.role} turn was interrupted`);
       }
@@ -253,5 +256,6 @@ function shouldRender(event: AppServerEvent, mode: TurnOutputMode): boolean {
 function findFinalAgentMessage(completed: TurnCompletedParams): string {
   const messages = (completed.turn.items || []).filter(item => item.type === 'agentMessage');
   const last = messages.at(-1);
+
   return last?.text || '';
 }

@@ -67,6 +67,7 @@ function projectItemCompleted(turn: TurnView, item: ThreadItem): TurnView {
       ? appendBlock(turn, 'error', `[command failed] exit=${item.exitCode}`)
       : turn;
   }
+
   if (item.type === 'collabAgentToolCall') {
     const states = Object.entries(item.agentsStates || {})
       .map(([threadId, state]) => `${threadId}=${state.status}`)
@@ -77,6 +78,7 @@ function projectItemCompleted(turn: TurnView, item: ThreadItem): TurnView {
       `[subagent ${item.status || 'completed'}] ${item.tool || 'activity'}${states ? ` ${states}` : ''}`,
     );
   }
+
   return turn;
 }
 
@@ -117,6 +119,8 @@ function appendBlock(turn: TurnView, kind: TurnBlockKind, text: string): TurnVie
   if (!text) {
     return turn;
   }
+
   const nextId = (turn.blocks.at(-1)?.id || 0) + 1;
+
   return { ...turn, blocks: [...turn.blocks, { id: nextId, kind, text }] };
 }

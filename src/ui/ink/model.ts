@@ -18,6 +18,7 @@ export interface TurnBlock {
 }
 
 export interface TurnView {
+  activityExpanded: boolean;
   blocks: TurnBlock[];
   changedFiles: string[];
   id: string;

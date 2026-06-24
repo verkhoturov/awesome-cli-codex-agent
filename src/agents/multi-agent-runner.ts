@@ -9,7 +9,7 @@ import type {
 import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
 import { createAgentProfiles } from './profiles.js';
-import { addUsage } from './usage.js';
+import { addUsage } from './add-usage.js';
 
 const ROUTING_SCHEMA: Record<string, unknown> = {
   additionalProperties: false,

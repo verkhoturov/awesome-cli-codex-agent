@@ -3,7 +3,7 @@ import type { CliState } from '../types.js';
 import type { CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
 import { createAgentProfiles } from './profiles.js';
-import { addUsage } from './usage.js';
+import { addUsage } from './add-usage.js';
 
 export class SingleAgentRunner {
   constructor(

@@ -37,6 +37,7 @@ export class InkUiStore {
         this.setSnapshot({
           ...this.snapshot,
           activeTurn: {
+            activityExpanded: false,
             blocks: [],
             changedFiles: [],
             id: event.id,
@@ -137,6 +138,21 @@ export class InkUiStore {
 
   discardRenderedHistory(): void {
     this.setSnapshot({ ...this.snapshot, history: [] });
+  }
+
+  toggleActiveTurnActivity(): void {
+    const turn = this.snapshot.activeTurn;
+    if (!turn) {
+      return;
+    }
+
+    this.setSnapshot({
+      ...this.snapshot,
+      activeTurn: {
+        ...turn,
+        activityExpanded: !turn.activityExpanded,
+      },
+    });
   }
 
   private appendMessage(kind: UiMessageKind, text: string): void {
