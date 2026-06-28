@@ -76,7 +76,10 @@ Ink-реализация терминального интерфейса.
 
 - `src/cli/index.ts` - основной CLI-цикл: приветствие, ввод пользователя, обработка команд, запуск агентов и завершение сессии.
 - `src/cli/authentication.ts` - оркестрация выбора способа входа и вызова нативной авторизации через UI.
-- `src/cli/commands/index.ts` - единый registry интерактивных команд, их help-текст, подсказки и обработчики.
+- `src/cli/commands/index.ts` - публичный API команд: `handleCommand`, help и подсказки.
+- `src/cli/commands/registry.ts` - registry интерактивных команд, lookup по имени, help-текст и подсказки.
+- `src/cli/commands/handlers.ts` - обработчики команд `/resume`, `/model`, `/permissions`, `/logout` и shared helpers для conversation reset.
+- `src/cli/commands/types.ts` - общие типы command layer: context, result и command definition.
 - `src/cli/session/usage.ts` - текст `--help` для верхнего уровня CLI.
 - `src/cli/session/output.ts` - вывод приветствия, статуса и итоговой сводки по токенам.
 - `src/cli/server-requests/queue.ts` - сериализация server requests, чтобы запросы на подтверждение не пересекались.
