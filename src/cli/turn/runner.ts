@@ -4,7 +4,6 @@ import { interruptTurn, startThread, startTurn } from '../../app-server/session.
 import type { ThreadTokenUsage, TurnCompletedParams } from '../../app-server/types.js';
 import type { AgentProfile, CliState } from '../../types.js';
 import type { CliUi } from '../../ui/contracts.js';
-import { emitMessage } from '../../ui/output.js';
 
 export type TurnOutputMode = 'activity' | 'full' | 'silent';
 
@@ -196,7 +195,7 @@ export class TurnRunner {
       const finalText = findFinalAgentMessage(completed) || streamedText;
 
       if (request.outputMode === 'full' && !renderedStreamedText && finalText) {
-        emitMessage(this.ui, `agent> ${finalText}\n`, 'agent');
+        this.ui.emit({ kind: 'agent', text: `agent> ${finalText}\n`, type: 'message' });
       }
 
       if (completed.turn.status === 'failed') {

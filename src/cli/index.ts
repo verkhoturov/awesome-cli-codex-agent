@@ -2,7 +2,6 @@ import { AgentRunner } from '../agents/agent-runner.js';
 import type { AppServerClient } from '../app-server/client.js';
 import type { CliState } from '../types.js';
 import type { CliUi } from '../ui/contracts.js';
-import { emitMessage } from '../ui/output.js';
 import { type CommandResult, commandSuggestions, handleCommand } from './commands.js';
 import { handleServerRequest } from './server-requests/handler.js';
 import { PromptQueue } from './server-requests/queue.js';
@@ -72,7 +71,12 @@ export async function runCli(
         await agentRunner.run(input);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        emitMessage(ui, `\nError: ${message}\n`, 'error', 'stderr');
+        ui.emit({
+          channel: 'stderr',
+          kind: 'error',
+          text: `\nError: ${message}\n`,
+          type: 'message',
+        });
       }
     }
   } finally {

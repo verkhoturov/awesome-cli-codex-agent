@@ -6,7 +6,6 @@ import { ensureCodexAuthentication } from './cli/authentication.js';
 import { runCli } from './cli/index.js';
 import { usage } from './cli/usage.js';
 import { InkCliUi } from './ui/ink/index.js';
-import { emitMessage } from './ui/output.js';
 import { checkCodexCli } from './utils/check-codex-cli.js';
 import { parseArgs } from './utils/cli-arguments.js';
 
@@ -28,11 +27,11 @@ async function main(): Promise<void> {
 
   try {
     const authentication = await ensureCodexAuthentication(nativeAuthentication, ui, forceLogin);
-    emitMessage(
-      ui,
-      `Using ${codexVersion}\nAuthentication: ${authentication}\n\nConnecting to Codex app-server...\n`,
-      'status',
-    );
+    ui.emit({
+      kind: 'status',
+      text: `Using ${codexVersion}\nAuthentication: ${authentication}\n\nConnecting to Codex app-server...\n`,
+      type: 'message',
+    });
 
     const appServer = new CodexAppServerClient({
       codexHome: state.codexHome,
@@ -49,7 +48,7 @@ async function main(): Promise<void> {
     }
 
     if (logout) {
-      emitMessage(ui, `${nativeAuthentication.logout()}\n`, 'status');
+      ui.emit({ kind: 'status', text: `${nativeAuthentication.logout()}\n`, type: 'message' });
     }
   } finally {
     ui.close();

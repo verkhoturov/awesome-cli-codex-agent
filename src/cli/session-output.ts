@@ -3,14 +3,13 @@ import type { TokenUsageBreakdown } from '../app-server/types.js';
 import { APP_SERVER_CLIENT_INFO } from '../config.js';
 import { AGENT_ROLES, type CliState } from '../types.js';
 import type { CliUi } from '../ui/contracts.js';
-import { emitMessage } from '../ui/output.js';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 
 export function printWelcome(ui: CliUi, state: CliState): void {
-  emitMessage(
-    ui,
-    `
+  ui.emit({
+    kind: 'system',
+    text: `
 ----------------------------------------------------------------------------------
 
 ${APP_SERVER_CLIENT_INFO.title} (${APP_SERVER_CLIENT_INFO.version})
@@ -19,35 +18,35 @@ ${configurationSummary(state)}
 Run /help for commands. Ctrl+C cancels the current request or exits while idle.
 
 ----------------------------------------------------------------------------------\n`,
-    'system',
-  );
+    type: 'message',
+  });
 }
 
 export function printStatus(ui: CliUi, state: CliState): void {
-  emitMessage(
-    ui,
-    `${configurationSummary(state)}\nAgent thread: ${state.conversation.threadId || 'not started'}\n`,
-    'status',
-  );
+  ui.emit({
+    kind: 'status',
+    text: `${configurationSummary(state)}\nAgent thread: ${state.conversation.threadId || 'not started'}\n`,
+    type: 'message',
+  });
 }
 
 export function printSessionSummary(ui: CliUi, state: CliState): void {
   const usageByRole = state.conversation.usageByRole;
   const total = sumUsage(Object.values(usageByRole));
-  emitMessage(
-    ui,
-    `\nToken usage: total=${formatNumber(total.totalTokens)} input=${formatNumber(total.inputTokens)}${total.cachedInputTokens ? ` (+ ${formatNumber(total.cachedInputTokens)} cached)` : ''} output=${formatNumber(total.outputTokens)}\n`,
-    'status',
-  );
+  ui.emit({
+    kind: 'status',
+    text: `\nToken usage: total=${formatNumber(total.totalTokens)} input=${formatNumber(total.inputTokens)}${total.cachedInputTokens ? ` (+ ${formatNumber(total.cachedInputTokens)} cached)` : ''} output=${formatNumber(total.outputTokens)}\n`,
+    type: 'message',
+  });
 
   for (const role of AGENT_ROLES) {
     const usage = usageByRole[role];
     if (usage) {
-      emitMessage(
-        ui,
-        `  ${role}: total=${formatNumber(usage.totalTokens)} input=${formatNumber(usage.inputTokens)} output=${formatNumber(usage.outputTokens)}\n`,
-        'status',
-      );
+      ui.emit({
+        kind: 'status',
+        text: `  ${role}: total=${formatNumber(usage.totalTokens)} input=${formatNumber(usage.inputTokens)} output=${formatNumber(usage.outputTokens)}\n`,
+        type: 'message',
+      });
     }
   }
 
@@ -58,11 +57,11 @@ export function printSessionSummary(ui: CliUi, state: CliState): void {
     const effort = state.reasoningEffortOverride
       ? ` --reasoning-effort ${state.reasoningEffortOverride}`
       : '';
-    emitMessage(
-      ui,
-      `To continue this agent session, run command "npm run resume -- ${threadId} --model ${model}${effort} --sandbox ${state.sandbox} -C ${cwd}"\n`,
-      'status',
-    );
+    ui.emit({
+      kind: 'status',
+      text: `To continue this agent session, run command "npm run resume -- ${threadId} --model ${model}${effort} --sandbox ${state.sandbox} -C ${cwd}"\n`,
+      type: 'message',
+    });
   }
 }
 

@@ -62,7 +62,6 @@
 ### `src/ui/`
 
 - `src/ui/contracts.ts` - presentation-independent порт `CliUi`, типы UI-событий, запросов ввода и подсказок.
-- `src/ui/output.ts` - общий helper для отправки текстовых сообщений в UI.
 - `src/ui/resolve-input.ts` - нормализация ответа пользователя для choice/input полей.
 
 #### `src/ui/ink/`

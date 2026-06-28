@@ -4,7 +4,6 @@ import { resumeThread } from '../app-server/session.js';
 import { DEFAULT_REASONING_EFFORT } from '../config.js';
 import { type CliState, isReasoningEffort, isSandboxMode, type ReasoningEffort } from '../types.js';
 import type { CliTextSuggestion, CliUi } from '../ui/contracts.js';
-import { emitMessage } from '../ui/output.js';
 import { printStatus, printWelcome } from './session-output.js';
 
 export type CommandResult = 'continue' | 'exit' | 'logout';
@@ -96,7 +95,11 @@ export async function handleCommand(
   const [name, ...args] = input.trim().split(/\s+/);
   const command = name ? COMMAND_BY_NAME.get(name) : undefined;
   if (!command) {
-    emitMessage(context.ui, `Unknown command: ${name || input}. Run /help.\n`, 'error');
+    context.ui.emit({
+      kind: 'error',
+      text: `Unknown command: ${name || input}. Run /help.\n`,
+      type: 'message',
+    });
     return 'continue';
   }
   return command.execute(context, args);
@@ -124,13 +127,13 @@ function commandValue(command: CliCommand): string {
 }
 
 function showHelp({ ui }: CommandContext): CommandResult {
-  emitMessage(ui, `${commandHelp()}\n`, 'system');
+  ui.emit({ kind: 'system', text: `${commandHelp()}\n`, type: 'message' });
   return 'continue';
 }
 
 function startNewThread({ state, ui }: CommandContext): CommandResult {
   resetConversation(state);
-  emitMessage(ui, 'Started a new agent conversation.\n', 'status');
+  ui.emit({ kind: 'status', text: 'Started a new agent conversation.\n', type: 'message' });
   return 'continue';
 }
 
@@ -140,11 +143,11 @@ async function resumeSavedThread(
 ): Promise<CommandResult> {
   const threadId = args.join(' ').trim();
   if (!threadId) {
-    emitMessage(
-      ui,
-      `Usage: /resume <thread-id>${state.conversation.threadId ? `\nCurrent: ${state.conversation.threadId}` : ''}\n`,
-      'error',
-    );
+    ui.emit({
+      kind: 'error',
+      text: `Usage: /resume <thread-id>${state.conversation.threadId ? `\nCurrent: ${state.conversation.threadId}` : ''}\n`,
+      type: 'message',
+    });
     return 'continue';
   }
 
@@ -163,7 +166,7 @@ async function resumeSavedThread(
   resetConversation(state);
   state.conversation.threadId = resumedThreadId;
 
-  emitMessage(ui, `Resumed agent thread ${resumedThreadId}.\n`, 'status');
+  ui.emit({ kind: 'status', text: `Resumed agent thread ${resumedThreadId}.\n`, type: 'message' });
 
   return 'continue';
 }
@@ -177,29 +180,33 @@ function showStatus({ state, ui }: CommandContext): CommandResult {
 function showAgents({ state, ui }: CommandContext): CommandResult {
   const profiles = createAgentProfiles(state);
   const profile = profiles.agent;
-  emitMessage(
-    ui,
-    `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
-    'status',
-  );
+  ui.emit({
+    kind: 'status',
+    text: `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
+    type: 'message',
+  });
 
   return 'continue';
 }
 
 function changeModel({ state, ui }: CommandContext, args: string[]): CommandResult {
   if (args.length === 0) {
-    emitMessage(
-      ui,
-      `Agent: ${state.model} (reasoning: ${state.reasoningEffortOverride || DEFAULT_REASONING_EFFORT})\n`,
-      'status',
-    );
+    ui.emit({
+      kind: 'status',
+      text: `Agent: ${state.model} (reasoning: ${state.reasoningEffortOverride || DEFAULT_REASONING_EFFORT})\n`,
+      type: 'message',
+    });
     return 'continue';
   }
 
   const settings = parseModelSettings(args);
 
   if (!settings) {
-    emitMessage(ui, 'Usage: /model <model> [none|minimal|low|medium|high|xhigh]\n', 'error');
+    ui.emit({
+      kind: 'error',
+      text: 'Usage: /model <model> [none|minimal|low|medium|high|xhigh]\n',
+      type: 'message',
+    });
     return 'continue';
   }
 
@@ -207,11 +214,11 @@ function changeModel({ state, ui }: CommandContext, args: string[]): CommandResu
   state.reasoningEffortOverride = settings.effort;
   resetConversation(state);
 
-  emitMessage(
-    ui,
-    `Agent changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
-    'status',
-  );
+  ui.emit({
+    kind: 'status',
+    text: `Agent changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
+    type: 'message',
+  });
 
   return 'continue';
 }
@@ -220,18 +227,30 @@ function changePermissions({ state, ui }: CommandContext, args: string[]): Comma
   const mode = args.join(' ').trim();
 
   if (!mode) {
-    emitMessage(ui, `Sandbox: ${state.sandbox}; approvals: ${state.approvalPolicy}\n`, 'status');
+    ui.emit({
+      kind: 'status',
+      text: `Sandbox: ${state.sandbox}; approvals: ${state.approvalPolicy}\n`,
+      type: 'message',
+    });
     return 'continue';
   }
 
   if (!isSandboxMode(mode)) {
-    emitMessage(ui, 'Usage: /permissions <read-only|workspace-write>\n', 'error');
+    ui.emit({
+      kind: 'error',
+      text: 'Usage: /permissions <read-only|workspace-write>\n',
+      type: 'message',
+    });
     return 'continue';
   }
 
   state.sandbox = mode;
   resetConversation(state);
-  emitMessage(ui, `Agent sandbox changed to ${mode}. Started a new conversation.\n`, 'status');
+  ui.emit({
+    kind: 'status',
+    text: `Agent sandbox changed to ${mode}. Started a new conversation.\n`,
+    type: 'message',
+  });
 
   return 'continue';
 }
@@ -246,7 +265,7 @@ function clearConversation({ state, ui }: CommandContext): CommandResult {
 
 async function logout({ ui }: CommandContext, args: string[]): Promise<CommandResult> {
   if (args.length > 0) {
-    emitMessage(ui, 'Usage: /logout\n', 'error');
+    ui.emit({ kind: 'error', text: 'Usage: /logout\n', type: 'message' });
 
     return 'continue';
   }
@@ -262,12 +281,12 @@ async function logout({ ui }: CommandContext, args: string[]): Promise<CommandRe
   });
 
   if (answer !== 'yes') {
-    emitMessage(ui, 'Logout cancelled.\n', 'status');
+    ui.emit({ kind: 'status', text: 'Logout cancelled.\n', type: 'message' });
 
     return 'continue';
   }
 
-  emitMessage(ui, 'Closing the session before logout...\n', 'status');
+  ui.emit({ kind: 'status', text: 'Closing the session before logout...\n', type: 'message' });
 
   return 'logout';
 }
