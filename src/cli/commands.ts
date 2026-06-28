@@ -1,4 +1,4 @@
-import { createAgentProfiles } from '../agents/profiles.js';
+import { agentProfile } from '../agents/runner.js';
 import type { AppServerClient } from '../app-server/client.js';
 import { resumeThread } from '../app-server/session.js';
 import { DEFAULT_REASONING_EFFORT } from '../config.js';
@@ -24,13 +24,20 @@ interface CliCommand {
 const COMMANDS: CliCommand[] = [
   {
     description: 'Show commands',
-    execute: showHelp,
+    execute: ({ ui }) => {
+      ui.emit({ kind: 'system', text: `${commandHelp()}\n`, type: 'message' });
+      return 'continue';
+    },
     names: ['/help'],
     usage: '/help',
   },
   {
     description: 'Start a new conversation',
-    execute: startNewThread,
+    execute: ({ state, ui }) => {
+      resetConversation(state);
+      ui.emit({ kind: 'status', text: 'Started a new agent conversation.\n', type: 'message' });
+      return 'continue';
+    },
     names: ['/new'],
     usage: '/new',
   },
@@ -42,13 +49,24 @@ const COMMANDS: CliCommand[] = [
   },
   {
     description: 'Show current configuration',
-    execute: showStatus,
+    execute: ({ state, ui }) => {
+      printStatus(ui, state);
+      return 'continue';
+    },
     names: ['/status'],
     usage: '/status',
   },
   {
     description: 'Show the active agent configuration',
-    execute: showAgents,
+    execute: ({ state, ui }) => {
+      const profile = agentProfile(state);
+      ui.emit({
+        kind: 'status',
+        text: `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
+        type: 'message',
+      });
+      return 'continue';
+    },
     names: ['/agents'],
     usage: '/agents',
   },
@@ -66,7 +84,12 @@ const COMMANDS: CliCommand[] = [
   },
   {
     description: 'Clear the screen and start a new thread',
-    execute: clearConversation,
+    execute: ({ state, ui }) => {
+      ui.emit({ type: 'clear' });
+      resetConversation(state);
+      printWelcome(ui, state);
+      return 'continue';
+    },
     names: ['/clear'],
     usage: '/clear',
   },
@@ -126,17 +149,6 @@ function commandValue(command: CliCommand): string {
   return command.usage.includes(' ') ? `${name} ` : name;
 }
 
-function showHelp({ ui }: CommandContext): CommandResult {
-  ui.emit({ kind: 'system', text: `${commandHelp()}\n`, type: 'message' });
-  return 'continue';
-}
-
-function startNewThread({ state, ui }: CommandContext): CommandResult {
-  resetConversation(state);
-  ui.emit({ kind: 'status', text: 'Started a new agent conversation.\n', type: 'message' });
-  return 'continue';
-}
-
 async function resumeSavedThread(
   { client, state, ui }: CommandContext,
   args: string[],
@@ -151,8 +163,7 @@ async function resumeSavedThread(
     return 'continue';
   }
 
-  const profiles = createAgentProfiles(state);
-  const profile = profiles.agent;
+  const profile = agentProfile(state);
   const resumedThreadId = await resumeThread(client, threadId, {
     approvalPolicy: state.approvalPolicy,
     cwd: state.cwd,
@@ -167,24 +178,6 @@ async function resumeSavedThread(
   state.conversation.threadId = resumedThreadId;
 
   ui.emit({ kind: 'status', text: `Resumed agent thread ${resumedThreadId}.\n`, type: 'message' });
-
-  return 'continue';
-}
-
-function showStatus({ state, ui }: CommandContext): CommandResult {
-  printStatus(ui, state);
-
-  return 'continue';
-}
-
-function showAgents({ state, ui }: CommandContext): CommandResult {
-  const profiles = createAgentProfiles(state);
-  const profile = profiles.agent;
-  ui.emit({
-    kind: 'status',
-    text: `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
-    type: 'message',
-  });
 
   return 'continue';
 }
@@ -255,14 +248,6 @@ function changePermissions({ state, ui }: CommandContext, args: string[]): Comma
   return 'continue';
 }
 
-function clearConversation({ state, ui }: CommandContext): CommandResult {
-  ui.emit({ type: 'clear' });
-  resetConversation(state);
-  printWelcome(ui, state);
-
-  return 'continue';
-}
-
 async function logout({ ui }: CommandContext, args: string[]): Promise<CommandResult> {
   if (args.length > 0) {
     ui.emit({ kind: 'error', text: 'Usage: /logout\n', type: 'message' });
@@ -292,7 +277,7 @@ async function logout({ ui }: CommandContext, args: string[]): Promise<CommandRe
 }
 
 function resetConversation(state: CliState): void {
-  state.conversation = { usageByRole: {} };
+  state.conversation = {};
 }
 
 function describePrimaryEffort(state: CliState): string {

@@ -1,4 +1,4 @@
-import { AgentRunner } from '../agents/agent-runner.js';
+import { runAgentTurn } from '../agents/runner.js';
 import type { AppServerClient } from '../app-server/client.js';
 import type { CliState } from '../types.js';
 import type { CliUi } from '../ui/contracts.js';
@@ -18,7 +18,6 @@ export async function runCli(
   let exitResult: Exclude<CommandResult, 'continue'> = 'exit';
   const promptQueue = new PromptQueue();
   const turnRunner = new TurnRunner(state, client, ui);
-  const agentRunner = new AgentRunner(state, turnRunner, ui);
 
   client.setServerRequestHandler(request =>
     promptQueue.run(() => handleServerRequest(request, ui)),
@@ -68,7 +67,7 @@ export async function runCli(
       }
 
       try {
-        await agentRunner.run(input);
+        await runAgentTurn(state, turnRunner, ui, input);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         ui.emit({

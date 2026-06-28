@@ -1,7 +1,7 @@
-import { createAgentProfiles } from '../agents/profiles.js';
+import { agentProfile } from '../agents/runner.js';
 import type { TokenUsageBreakdown } from '../app-server/types.js';
 import { APP_SERVER_CLIENT_INFO } from '../config.js';
-import { AGENT_ROLES, type CliState } from '../types.js';
+import type { CliState } from '../types.js';
 import type { CliUi } from '../ui/contracts.js';
 
 const numberFormat = new Intl.NumberFormat('en-US');
@@ -31,24 +31,12 @@ export function printStatus(ui: CliUi, state: CliState): void {
 }
 
 export function printSessionSummary(ui: CliUi, state: CliState): void {
-  const usageByRole = state.conversation.usageByRole;
-  const total = sumUsage(Object.values(usageByRole));
+  const usage = state.conversation.usage || emptyUsage();
   ui.emit({
     kind: 'status',
-    text: `\nToken usage: total=${formatNumber(total.totalTokens)} input=${formatNumber(total.inputTokens)}${total.cachedInputTokens ? ` (+ ${formatNumber(total.cachedInputTokens)} cached)` : ''} output=${formatNumber(total.outputTokens)}\n`,
+    text: `\nToken usage: total=${formatNumber(usage.totalTokens)} input=${formatNumber(usage.inputTokens)}${usage.cachedInputTokens ? ` (+ ${formatNumber(usage.cachedInputTokens)} cached)` : ''} output=${formatNumber(usage.outputTokens)}\n`,
     type: 'message',
   });
-
-  for (const role of AGENT_ROLES) {
-    const usage = usageByRole[role];
-    if (usage) {
-      ui.emit({
-        kind: 'status',
-        text: `  ${role}: total=${formatNumber(usage.totalTokens)} input=${formatNumber(usage.inputTokens)} output=${formatNumber(usage.outputTokens)}\n`,
-        type: 'message',
-      });
-    }
-  }
 
   if (state.conversation.threadId) {
     const cwd = shellQuote(state.cwd);
@@ -66,10 +54,10 @@ export function printSessionSummary(ui: CliUi, state: CliState): void {
 }
 
 function configurationSummary(state: CliState): string {
-  const profiles = createAgentProfiles(state);
+  const profile = agentProfile(state);
   const lines = [
     `cwd: ${state.cwd}`,
-    `agent: ${profiles.agent.model} (${profiles.agent.reasoningEffort})`,
+    `agent: ${profile.model} (${profile.reasoningEffort})`,
     `agent sandbox: ${state.sandbox}`,
   ];
   lines.push(`approvals: ${state.approvalPolicy}`);
@@ -80,23 +68,14 @@ function shellQuote(value: string): string {
   return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
-function sumUsage(usages: Array<TokenUsageBreakdown | undefined>): TokenUsageBreakdown {
-  return usages.reduce<TokenUsageBreakdown>(
-    (total, usage) => ({
-      cachedInputTokens: total.cachedInputTokens + (usage?.cachedInputTokens || 0),
-      inputTokens: total.inputTokens + (usage?.inputTokens || 0),
-      outputTokens: total.outputTokens + (usage?.outputTokens || 0),
-      reasoningOutputTokens: total.reasoningOutputTokens + (usage?.reasoningOutputTokens || 0),
-      totalTokens: total.totalTokens + (usage?.totalTokens || 0),
-    }),
-    {
-      cachedInputTokens: 0,
-      inputTokens: 0,
-      outputTokens: 0,
-      reasoningOutputTokens: 0,
-      totalTokens: 0,
-    },
-  );
+function emptyUsage(): TokenUsageBreakdown {
+  return {
+    cachedInputTokens: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 0,
+  };
 }
 
 function formatNumber(value: number): string {

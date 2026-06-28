@@ -88,7 +88,8 @@ export class TurnRunner {
     let tokenUsage: ThreadTokenUsage | undefined;
 
     this.activeTurn = activeTurn;
-    this.ui.emit({ id: uiId, label: request.label || request.profile.role, type: 'turnStarted' });
+    const label = request.label || 'agent';
+    this.ui.emit({ id: uiId, label, type: 'turnStarted' });
 
     let resolveCompletion: (params: TurnCompletedParams) => void = () => undefined;
     let rejectCompletion: (error: Error) => void = () => undefined;
@@ -199,15 +200,15 @@ export class TurnRunner {
       }
 
       if (completed.turn.status === 'failed') {
-        throw new Error(completed.turn.error?.message || `${request.profile.role} turn failed`);
+        throw new Error(completed.turn.error?.message || `${label} turn failed`);
       }
 
       if (completed.turn.status === 'interrupted') {
-        throw new Error(`${request.profile.role} turn was interrupted`);
+        throw new Error(`${label} turn was interrupted`);
       }
 
       if (!finalText) {
-        throw new Error(`${request.profile.role} returned no final response`);
+        throw new Error(`${label} returned no final response`);
       }
 
       return { finalText, threadId: activeTurn.threadId, tokenUsage };

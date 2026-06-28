@@ -6,22 +6,17 @@ export const REASONING_EFFORTS = ['none', 'minimal', 'low', 'medium', 'high', 'x
 export type SandboxMode = (typeof SANDBOX_MODES)[number];
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
-export const AGENT_ROLES = ['agent'] as const;
-
-export type AgentRole = (typeof AGENT_ROLES)[number];
-
 export interface AgentProfile {
   developerInstructions: string;
   ephemeral: boolean;
   model: string;
   reasoningEffort: ReasoningEffort;
-  role: AgentRole;
   sandbox: SandboxMode;
 }
 
 export interface ConversationState {
   threadId?: string;
-  usageByRole: Partial<Record<AgentRole, TokenUsageBreakdown>>;
+  usage?: TokenUsageBreakdown;
 }
 
 export function isSandboxMode(value: string): value is SandboxMode {

@@ -98,7 +98,7 @@ export function parseArgs(args: string[]): ParsedArgs {
     state: {
       approvalPolicy: DEFAULT_APPROVAL_POLICY,
       codexHome: DEFAULT_CODEX_HOME,
-      conversation: { usageByRole: {} },
+      conversation: {},
       cwd,
       model,
       reasoningEffortOverride,

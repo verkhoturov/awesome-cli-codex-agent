@@ -18,40 +18,36 @@ export function projectTurnEvent(turn: TurnView, event: RenderableAppServerEvent
     case 'itemCompleted':
       return projectItemCompleted(turn, event.item);
     case 'error':
-      return appendBlock(turn, 'error', `[error] ${event.message}`);
+      return appendTurnBlock(turn, 'error', `[error] ${event.message}`);
     case 'warning':
-      return appendBlock(turn, 'warning', `[warning] ${event.message}`);
+      return appendTurnBlock(turn, 'warning', `[warning] ${event.message}`);
     default:
       return assertNever(event, 'Unhandled Ink turn event');
   }
 }
 
-export function appendTurnBlock(turn: TurnView, kind: TurnBlockKind, text: string): TurnView {
-  return appendBlock(turn, kind, text);
-}
-
 function projectItemStarted(turn: TurnView, item: ThreadItem): TurnView {
   switch (item.type) {
     case 'commandExecution':
-      return appendBlock(turn, 'activity', `[command] ${item.command || 'shell command'}`);
+      return appendTurnBlock(turn, 'activity', `[command] ${item.command || 'shell command'}`);
     case 'mcpToolCall':
-      return appendBlock(
+      return appendTurnBlock(
         turn,
         'activity',
         `[mcp] ${item.server || 'server'}/${item.tool || 'tool'}`,
       );
     case 'webSearch':
-      return appendBlock(turn, 'activity', `[web search] ${item.query || ''}`);
+      return appendTurnBlock(turn, 'activity', `[web search] ${item.query || ''}`);
     case 'fileChange':
       return appendFileChanges(turn, item.changes);
     case 'collabAgentToolCall':
-      return appendBlock(
+      return appendTurnBlock(
         turn,
         'activity',
         `[subagent] ${item.tool || 'activity'}${item.model ? ` model=${item.model}` : ''}`,
       );
     case 'subAgentActivity':
-      return appendBlock(
+      return appendTurnBlock(
         turn,
         'activity',
         `[subagent ${item.kind || 'activity'}] ${item.agentPath || item.agentThreadId || ''}`,
@@ -64,7 +60,7 @@ function projectItemStarted(turn: TurnView, item: ThreadItem): TurnView {
 function projectItemCompleted(turn: TurnView, item: ThreadItem): TurnView {
   if (item.type === 'commandExecution') {
     return typeof item.exitCode === 'number' && item.exitCode !== 0
-      ? appendBlock(turn, 'error', `[command failed] exit=${item.exitCode}`)
+      ? appendTurnBlock(turn, 'error', `[command failed] exit=${item.exitCode}`)
       : turn;
   }
 
@@ -72,7 +68,7 @@ function projectItemCompleted(turn: TurnView, item: ThreadItem): TurnView {
     const states = Object.entries(item.agentsStates || {})
       .map(([threadId, state]) => `${threadId}=${state.status}`)
       .join(', ');
-    return appendBlock(
+    return appendTurnBlock(
       turn,
       'activity',
       `[subagent ${item.status || 'completed'}] ${item.tool || 'activity'}${states ? ` ${states}` : ''}`,
@@ -89,7 +85,7 @@ function appendFileChanges(turn: TurnView, changes: FileChange[] | undefined): T
       continue;
     }
     next = {
-      ...appendBlock(next, 'file', `[file ${change.kind}] ${change.path}`),
+      ...appendTurnBlock(next, 'file', `[file ${change.kind}] ${change.path}`),
       changedFiles: [...next.changedFiles, change.path],
     };
   }
@@ -112,10 +108,10 @@ function appendDelta(
       blocks: [...turn.blocks.slice(0, -1), { ...last, text: last.text + delta }],
     };
   }
-  return appendBlock(turn, kind, prefix + delta);
+  return appendTurnBlock(turn, kind, prefix + delta);
 }
 
-function appendBlock(turn: TurnView, kind: TurnBlockKind, text: string): TurnView {
+export function appendTurnBlock(turn: TurnView, kind: TurnBlockKind, text: string): TurnView {
   if (!text) {
     return turn;
   }

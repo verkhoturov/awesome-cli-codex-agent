@@ -55,9 +55,7 @@
 
 ### `src/agents/`
 
-- `src/agents/single-agent-runner.ts` - запуск одного постоянного agent thread.
-- `src/agents/profiles.ts` - профиль агента: инструкции, модель, reasoning effort, sandbox и ephemeral-настройка.
-- `src/agents/add-usage.ts` - накопление token usage по роли агента внутри текущей conversation state.
+- `src/agents/runner.ts` - профиль агента и запуск одного постоянного agent thread.
 
 ### `src/ui/`
 
