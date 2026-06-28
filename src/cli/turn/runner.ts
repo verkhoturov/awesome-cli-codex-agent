@@ -203,7 +203,6 @@ export class TurnRunner {
         throw new Error(completed.turn.error?.message || `${request.profile.role} turn failed`);
       }
 
-      
       if (completed.turn.status === 'interrupted') {
         throw new Error(`${request.profile.role} turn was interrupted`);
       }

@@ -2,14 +2,7 @@ import { createAgentProfiles } from '../agents/profiles.js';
 import type { AppServerClient } from '../app-server/client.js';
 import { resumeThread } from '../app-server/session.js';
 import { DEFAULT_REASONING_EFFORT } from '../config.js';
-import {
-  type CliState,
-  isAgentMode,
-  isReasoningEffort,
-  isSandboxMode,
-  MULTI_AGENT_ROLES,
-  type ReasoningEffort,
-} from '../types.js';
+import { type CliState, isReasoningEffort, isSandboxMode, type ReasoningEffort } from '../types.js';
 import type { CliTextSuggestion, CliUi } from '../ui/contracts.js';
 import { emitMessage } from '../ui/output.js';
 import { printStatus, printWelcome } from './session-output.js';
@@ -37,13 +30,13 @@ const COMMANDS: CliCommand[] = [
     usage: '/help',
   },
   {
-    description: 'Start a new conversation in the current agent mode',
+    description: 'Start a new conversation',
     execute: startNewThread,
     names: ['/new'],
     usage: '/new',
   },
   {
-    description: 'Resume a saved thread in the current agent mode',
+    description: 'Resume a saved agent thread',
     execute: resumeSavedThread,
     names: ['/resume'],
     usage: '/resume <thread-id>',
@@ -55,15 +48,9 @@ const COMMANDS: CliCommand[] = [
     usage: '/status',
   },
   {
-    description: 'Show or switch multi/single agent mode',
-    execute: changeAgentMode,
-    names: ['/mode'],
-    usage: '/mode [multi|single]',
-  },
-  {
     description: 'Show the active agent configuration',
     execute: showAgents,
-    names: ['/agents', '/workflow'],
+    names: ['/agents'],
     usage: '/agents',
   },
   {
@@ -143,7 +130,7 @@ function showHelp({ ui }: CommandContext): CommandResult {
 
 function startNewThread({ state, ui }: CommandContext): CommandResult {
   resetConversation(state);
-  emitMessage(ui, `Started a new ${state.agentMode}-agent conversation.\n`, 'status');
+  emitMessage(ui, 'Started a new agent conversation.\n', 'status');
   return 'continue';
 }
 
@@ -160,9 +147,9 @@ async function resumeSavedThread(
     );
     return 'continue';
   }
-  
+
   const profiles = createAgentProfiles(state);
-  const profile = state.agentMode === 'single' ? profiles.agent : profiles.coordinator;
+  const profile = profiles.agent;
   const resumedThreadId = await resumeThread(client, threadId, {
     approvalPolicy: state.approvalPolicy,
     cwd: state.cwd,
@@ -176,12 +163,7 @@ async function resumeSavedThread(
   resetConversation(state);
   state.conversation.threadId = resumedThreadId;
 
-  const suffix = state.agentMode === 'multi' ? ' Worker threads will start fresh.' : '';
-  emitMessage(
-    ui,
-    `Resumed ${state.agentMode}-agent thread ${resumedThreadId}.${suffix}\n`,
-    'status',
-  );
+  emitMessage(ui, `Resumed agent thread ${resumedThreadId}.\n`, 'status');
 
   return 'continue';
 }
@@ -192,83 +174,23 @@ function showStatus({ state, ui }: CommandContext): CommandResult {
   return 'continue';
 }
 
-function changeAgentMode({ state, ui }: CommandContext, args: string[]): CommandResult {
-  if (args.length === 0) {
-    emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
-
-    return 'continue';
-  }
-
-  const mode = args.join(' ').trim();
-
-  if (!isAgentMode(mode)) {
-    emitMessage(ui, 'Usage: /mode <multi|single>\n', 'error');
-
-    return 'continue';
-  }
-
-  if (mode === state.agentMode) {
-    emitMessage(ui, `Agent mode is already ${mode}.\n`, 'status');
-
-    return 'continue';
-  }
-
-  state.agentMode = mode;
-  resetConversation(state);
-  emitMessage(ui, `Agent mode changed to ${mode}. Started a new conversation.\n`, 'status');
-
-  return 'continue';
-}
-
 function showAgents({ state, ui }: CommandContext): CommandResult {
   const profiles = createAgentProfiles(state);
-  emitMessage(ui, `Agent mode: ${state.agentMode}\n`, 'status');
-
-  if (state.agentMode === 'single') {
-    const profile = profiles.agent;
-    emitMessage(
-      ui,
-      `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
-      'status',
-    );
-    return 'continue';
-  }
-
-  for (const role of MULTI_AGENT_ROLES) {
-    const profile = profiles[role];
-    const threadId = role === 'coordinator' ? state.conversation.threadId : undefined;
-    emitMessage(
-      ui,
-      `${role}: ${profile.model} (${describeEffort(state, role, profile.reasoningEffort)}), sandbox=${profile.sandbox}, thread=${threadId || (profile.ephemeral ? 'ephemeral' : 'not started')}\n`,
-      'status',
-    );
-  }
-
-  if (state.conversation.lastRoute) {
-    const agents = state.conversation.lastRoute.agents;
-    emitMessage(
-      ui,
-      `Last route: ${agents.length > 0 ? agents.join(', ') : 'coordinator'}; complexity=${state.conversation.lastRoute.complexity}\n`,
-      'status',
-    );
-  }
+  const profile = profiles.agent;
+  emitMessage(
+    ui,
+    `agent: ${profile.model} (${profile.reasoningEffort}), sandbox=${profile.sandbox}, thread=${state.conversation.threadId || 'not started'}, delegation=disabled\n`,
+    'status',
+  );
 
   return 'continue';
 }
 
 function changeModel({ state, ui }: CommandContext, args: string[]): CommandResult {
   if (args.length === 0) {
-    if (state.agentMode === 'single') {
-      emitMessage(
-        ui,
-        `Agent: ${state.model} (reasoning: ${state.reasoningEffortOverride || DEFAULT_REASONING_EFFORT})\n`,
-        'status',
-      );
-      return 'continue';
-    }
     emitMessage(
       ui,
-      `Implementer: ${state.model} (reasoning: ${state.reasoningEffortOverride || 'dynamic by complexity'})\n`,
+      `Agent: ${state.model} (reasoning: ${state.reasoningEffortOverride || DEFAULT_REASONING_EFFORT})\n`,
       'status',
     );
     return 'continue';
@@ -284,11 +206,10 @@ function changeModel({ state, ui }: CommandContext, args: string[]): CommandResu
   state.model = settings.model;
   state.reasoningEffortOverride = settings.effort;
   resetConversation(state);
-  const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
 
   emitMessage(
     ui,
-    `${label} changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
+    `Agent changed to ${state.model} (${describePrimaryEffort(state)}). Started a new conversation.\n`,
     'status',
   );
 
@@ -310,8 +231,7 @@ function changePermissions({ state, ui }: CommandContext, args: string[]): Comma
 
   state.sandbox = mode;
   resetConversation(state);
-  const label = state.agentMode === 'single' ? 'Agent' : 'Implementer';
-  emitMessage(ui, `${label} sandbox changed to ${mode}. Started a new conversation.\n`, 'status');
+  emitMessage(ui, `Agent sandbox changed to ${mode}. Started a new conversation.\n`, 'status');
 
   return 'continue';
 }
@@ -356,30 +276,12 @@ function resetConversation(state: CliState): void {
   state.conversation = { usageByRole: {} };
 }
 
-function describeEffort(
-  state: CliState,
-  role: (typeof MULTI_AGENT_ROLES)[number],
-  configured: ReasoningEffort,
-): string {
-  if (role === 'analyzer') {
-    return `dynamic by complexity, normal=${configured}`;
-  }
-
-  if (role === 'implementer' && !state.reasoningEffortOverride) {
-    return `dynamic by complexity, normal=${configured}`;
-  }
-
-  return role === 'implementer' ? `${configured}, fixed override` : configured;
-}
-
 function describePrimaryEffort(state: CliState): string {
   if (state.reasoningEffortOverride) {
     return `${state.reasoningEffortOverride}, fixed reasoning`;
   }
 
-  return state.agentMode === 'single'
-    ? `${DEFAULT_REASONING_EFFORT} reasoning`
-    : 'dynamic reasoning';
+  return `${DEFAULT_REASONING_EFFORT} reasoning`;
 }
 
 interface ModelSettings {

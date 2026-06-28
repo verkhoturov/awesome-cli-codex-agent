@@ -24,10 +24,9 @@ Run /help for commands. Ctrl+C cancels the current request or exits while idle.
 }
 
 export function printStatus(ui: CliUi, state: CliState): void {
-  const threadLabel = state.agentMode === 'single' ? 'Agent thread' : 'Coordinator thread';
   emitMessage(
     ui,
-    `${configurationSummary(state)}\n${threadLabel}: ${state.conversation.threadId || 'not started'}\n`,
+    `${configurationSummary(state)}\nAgent thread: ${state.conversation.threadId || 'not started'}\n`,
     'status',
   );
 }
@@ -61,7 +60,7 @@ export function printSessionSummary(ui: CliUi, state: CliState): void {
       : '';
     emitMessage(
       ui,
-      `To continue this ${state.agentMode}-agent session, run command "npm run resume -- ${threadId} --agent-mode ${state.agentMode} --model ${model}${effort} --sandbox ${state.sandbox} -C ${cwd}"\n`,
+      `To continue this agent session, run command "npm run resume -- ${threadId} --model ${model}${effort} --sandbox ${state.sandbox} -C ${cwd}"\n`,
       'status',
     );
   }
@@ -69,21 +68,11 @@ export function printSessionSummary(ui: CliUi, state: CliState): void {
 
 function configurationSummary(state: CliState): string {
   const profiles = createAgentProfiles(state);
-  const lines = [`cwd: ${state.cwd}`, `agent mode: ${state.agentMode}`];
-  if (state.agentMode === 'single') {
-    lines.push(
-      `agent: ${profiles.agent.model} (${profiles.agent.reasoningEffort})`,
-      `agent sandbox: ${state.sandbox}`,
-      'subagent delegation: disabled',
-    );
-  } else {
-    lines.push(
-      `coordinator: ${profiles.coordinator.model} (${profiles.coordinator.reasoningEffort})`,
-      `analyzer: ${profiles.analyzer.model} (dynamic, normal=${profiles.analyzer.reasoningEffort})`,
-      `implementer: ${profiles.implementer.model} (${state.reasoningEffortOverride ? `${state.reasoningEffortOverride}, fixed` : `dynamic, normal=${profiles.implementer.reasoningEffort}`})`,
-      `implementer sandbox: ${state.sandbox}`,
-    );
-  }
+  const lines = [
+    `cwd: ${state.cwd}`,
+    `agent: ${profiles.agent.model} (${profiles.agent.reasoningEffort})`,
+    `agent sandbox: ${state.sandbox}`,
+  ];
   lines.push(`approvals: ${state.approvalPolicy}`);
   return lines.join('\n');
 }

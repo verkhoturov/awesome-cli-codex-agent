@@ -26,7 +26,7 @@ export async function runCli(
   );
 
   const unsubscribeInterrupt = ui.onInterrupt(() => {
-    if (agentRunner.interrupt()) {
+    if (turnRunner.interrupt()) {
       return;
     }
 

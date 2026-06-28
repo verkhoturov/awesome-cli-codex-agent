@@ -5,7 +5,7 @@
 ## Корень репозитория
 
 - `package.json` - описание пакета, точка входа CLI, npm-скрипты, зависимости и бинарное имя `custom-codex-agent`.
-- `README.md` - пользовательская документация: установка, запуск, режимы агента, авторизация, команды и архитектурный обзор.
+- `README.md` - пользовательская документация: установка, запуск, настройки агента, авторизация, команды и архитектурный обзор.
 - `AGENTS.md` - правила и ограничения для Codex-агентов, особенно по слоям приложения и защищённым файлам.
 - `project-map.md` - эта карта проекта, чтобы быстро ориентироваться по структуре кода.
 - `.codex-data/` - проектный `CODEX_HOME` с авторизацией, конфигом, логами, sqlite-базами и другой runtime-состоянием Codex.
@@ -16,7 +16,7 @@
 
 - `src/index.ts` - главный entrypoint приложения; проверяет CLI, авторизацию, запускает App Server, создаёт UI и стартует интерактивный цикл.
 - `src/config.ts` - центральные дефолты: модель, reasoning effort, sandbox, approval policy, метаданные клиента App Server и путь к `.codex-data`.
-- `src/types.ts` - общие типы состояния приложения, режимов агента, sandboxes, complexity и профилей агентов.
+- `src/types.ts` - общие типы состояния приложения, sandbox, reasoning effort и профиля агента.
 
 ### `src/auth/`
 
@@ -55,11 +55,9 @@
 
 ### `src/agents/`
 
-- `src/agents/runner.ts` - диспетчер, который выбирает single- или multi-agent workflow.
-- `src/agents/single-agent-runner.ts` - запуск одного постоянного agent thread для режима `single`.
-- `src/agents/multi-agent-runner.ts` - workflow с `coordinator`, `analyzer` и `implementer`, включая routing и финальный ответ.
-- `src/agents/profiles.ts` - профили ролей: инструкции, модели, reasoning effort, sandbox и ephemeral-настройки.
-- `src/agents/usage.ts` - накопление token usage по ролям внутри текущей conversation state.
+- `src/agents/single-agent-runner.ts` - запуск одного постоянного agent thread.
+- `src/agents/profiles.ts` - профиль агента: инструкции, модель, reasoning effort, sandbox и ephemeral-настройка.
+- `src/agents/add-usage.ts` - накопление token usage по роли агента внутри текущей conversation state.
 
 ### `src/ui/`
 
@@ -89,5 +87,5 @@ Ink-реализация терминального интерфейса.
 
 - `src/app-server/` держит протокол и декодирование сырых сообщений.
 - `src/cli/` управляет поведением приложения и очередностью интерактивных запросов.
-- `src/agents/` определяет, как распределяется работа между ролями.
+- `src/agents/` определяет профиль и запуск одиночного агента.
 - `src/ui/ink/` отвечает только за визуализацию и ввод в терминале.
