@@ -84,10 +84,6 @@ Ink-реализация терминального интерфейса.
 - `src/ui/ink/components/history.tsx` - отрисовка завершённых сообщений и turn-ов из scrollback.
 - `src/ui/ink/components/turn.tsx` - отображение активного turn-а, activity grouping и статуса выполнения.
 - `src/ui/ink/components/message.tsx` - стилизованный вывод системных, статусных, warning и error сообщений.
-- `src/ui/ink/components/common/Box.tsx` - общая обёртка над Ink `Box`, включая режим `ui-debug`.
-- `src/ui/ink/components/common/Text.tsx` - общая обёртка над Ink `Text`, включая режим `ui-debug`.
-- `src/ui/ink/components/common/ui-debug.tsx` - React context для включения/выключения debug-обвязки UI.
-- `src/ui/ink/components/common/debug-style.ts` - стили и helper-формат для debug-меток в Ink.
 
 ## Что здесь важно понимать
 
@@ -95,4 +91,3 @@ Ink-реализация терминального интерфейса.
 - `src/cli/` управляет поведением приложения и очередностью интерактивных запросов.
 - `src/agents/` определяет, как распределяется работа между ролями.
 - `src/ui/ink/` отвечает только за визуализацию и ввод в терминале.
-

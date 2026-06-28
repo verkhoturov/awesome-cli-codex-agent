@@ -3,7 +3,6 @@ import { type Instance, render } from 'ink';
 import type { CliInputRequest, CliUi, CliUiEvent } from '../contracts.js';
 import { resolveInput } from '../resolve-input.js';
 import { InkApp } from './app.js';
-import { UiDebugProvider } from './components/common/ui-debug.js';
 import { InkUiStore } from './store.js';
 
 interface PendingInput {
@@ -11,10 +10,6 @@ interface PendingInput {
   reject: (error: Error) => void;
   request: CliInputRequest;
   resolve: (value: string) => void;
-}
-
-interface InkCliUiOptions {
-  uiDebug?: boolean;
 }
 
 export class InkCliUi implements CliUi {
@@ -26,10 +21,8 @@ export class InkCliUi implements CliUi {
   private nextInputId = 1;
   private pendingInput?: PendingInput;
   private readonly store = new InkUiStore();
-  private readonly uiDebug: boolean;
 
-  constructor({ uiDebug = false }: InkCliUiOptions = {}) {
-    this.uiDebug = uiDebug;
+  constructor() {
     this.mount();
   }
 
@@ -130,13 +123,7 @@ export class InkCliUi implements CliUi {
 
   private mount(): void {
     this.instance = render(
-      <UiDebugProvider enabled={this.uiDebug}>
-        <InkApp
-          onInterrupt={this.handleInterrupt}
-          onSubmit={this.handleSubmit}
-          store={this.store}
-        />
-      </UiDebugProvider>,
+      <InkApp onInterrupt={this.handleInterrupt} onSubmit={this.handleSubmit} store={this.store} />,
       { exitOnCtrlC: false },
     );
   }

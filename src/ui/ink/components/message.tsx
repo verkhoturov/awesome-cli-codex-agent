@@ -1,7 +1,6 @@
-import { useStdout } from 'ink';
+import { Text, useStdout } from 'ink';
 import { assertNever } from '../../../utils/assert-never.js';
 import type { UiMessageKind } from '../../contracts.js';
-import { Text } from './common/Text.js';
 
 interface MessageProps {
   kind: UiMessageKind;
@@ -14,43 +13,23 @@ export function Message({ kind, text }: MessageProps) {
 
   switch (kind) {
     case 'agent':
-      return (
-        <Text color="green" debugLabel="Message case=agent">
-          {fittedText}
-        </Text>
-      );
+      return <Text color="green">{fittedText}</Text>;
     case 'error':
-      return (
-        <Text color="red" debugLabel="Message case=error">
-          {fittedText}
-        </Text>
-      );
+      return <Text color="red">{fittedText}</Text>;
     case 'status':
-      return (
-        <Text debugLabel="Message case=status" dimColor>
-          {fittedText}
-        </Text>
-      );
+      return <Text dimColor>{fittedText}</Text>;
     case 'system':
       return (
-        <Text bold color="cyan" debugLabel="Message case=system">
+        <Text bold color="cyan">
           {fittedText}
         </Text>
       );
     case 'warning':
-      return (
-        <Text color="yellow" debugLabel="Message case=warning">
-          {fittedText}
-        </Text>
-      );
+      return <Text color="yellow">{fittedText}</Text>;
     case 'workflow':
-      return (
-        <Text color="magenta" debugLabel="Message case=workflow">
-          {fittedText}
-        </Text>
-      );
+      return <Text color="magenta">{fittedText}</Text>;
     case 'info':
-      return <Text debugLabel="Message case=info">{fittedText}</Text>;
+      return <Text>{fittedText}</Text>;
     default:
       return assertNever(kind, 'Unhandled Ink message kind');
   }

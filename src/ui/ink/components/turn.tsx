@@ -1,9 +1,8 @@
+import { Box, Text } from 'ink';
 import { useEffect, useState } from 'react';
 
 import { assertNever } from '../../../utils/assert-never.js';
 import type { TurnBlock, TurnView } from '../model.js';
-import { Box } from './common/Box.js';
-import { Text } from './common/Text.js';
 
 interface TurnProps {
   active?: boolean;
@@ -12,7 +11,7 @@ interface TurnProps {
 
 export function Turn({ active = false, turn }: TurnProps) {
   return (
-    <Box debugLabel={`Turn active=${active}`} flexDirection="column">
+    <Box flexDirection="column">
       {renderTurnBlocks(turn, active)}
       {active ? <WorkingStatus turn={turn} /> : null}
     </Box>
@@ -56,19 +55,19 @@ function ActivityGroup({ active, blocks, expanded }: ActivityGroupProps) {
 
   if (!expanded) {
     return (
-      <Text color="cyan" debugLabel="TurnBlockView case=activity group expanded=false">
+      <Text color="cyan">
         {label} ({blocks.length}) collapsed{hint}
       </Text>
     );
   }
 
   return (
-    <Box debugLabel="TurnBlockView case=activity group expanded=true" flexDirection="column">
-      <Text color="cyan" debugLabel="TurnBlockView case=activity group header">
+    <Box flexDirection="column">
+      <Text color="cyan">
         {label} ({blocks.length}) expanded{hint}
       </Text>
       {blocks.map(block => (
-        <Text color="cyan" debugLabel="TurnBlockView case=activity item" key={block.id}>
+        <Text color="cyan" key={block.id}>
           {block.text}
         </Text>
       ))}
@@ -83,59 +82,23 @@ function activityGroupLabel(blocks: ActivityGroupProps['blocks']): string {
 function TurnBlockView({ block }: { block: TurnBlock }) {
   switch (block.kind) {
     case 'answer':
-      return (
-        <Text color="green" debugLabel="TurnBlockView case=answer">
-          {block.text}
-        </Text>
-      );
+      return <Text color="green">{block.text}</Text>;
     case 'reasoning':
-      return (
-        <Text debugLabel="TurnBlockView case=reasoning" dimColor>
-          {block.text}
-        </Text>
-      );
+      return <Text dimColor>{block.text}</Text>;
     case 'commandOutput':
-      return (
-        <Text debugLabel="TurnBlockView case=commandOutput" dimColor>
-          {block.text}
-        </Text>
-      );
+      return <Text dimColor>{block.text}</Text>;
     case 'activity':
-      return (
-        <Text color="cyan" debugLabel="TurnBlockView case=activity">
-          {block.text}
-        </Text>
-      );
+      return <Text color="cyan">{block.text}</Text>;
     case 'file':
-      return (
-        <Text color="yellow" debugLabel="TurnBlockView case=file">
-          {block.text}
-        </Text>
-      );
+      return <Text color="yellow">{block.text}</Text>;
     case 'interaction':
-      return (
-        <Text color="blue" debugLabel="TurnBlockView case=interaction">
-          {block.text}
-        </Text>
-      );
+      return <Text color="blue">{block.text}</Text>;
     case 'status':
-      return (
-        <Text debugLabel="TurnBlockView case=status" dimColor>
-          {block.text}
-        </Text>
-      );
+      return <Text dimColor>{block.text}</Text>;
     case 'warning':
-      return (
-        <Text color="yellow" debugLabel="TurnBlockView case=warning">
-          {block.text}
-        </Text>
-      );
+      return <Text color="yellow">{block.text}</Text>;
     case 'error':
-      return (
-        <Text color="red" debugLabel="TurnBlockView case=error">
-          {block.text}
-        </Text>
-      );
+      return <Text color="red">{block.text}</Text>;
     default:
       return assertNever(block.kind, 'Unhandled Ink turn block');
   }
@@ -150,11 +113,9 @@ function WorkingStatus({ turn }: { turn: TurnView }) {
   }, [turn.startedAt]);
 
   return turn.interrupted ? (
-    <Text color="yellow" debugLabel="WorkingStatus case=interrupted">
-      [{turn.label}] interrupting current request
-    </Text>
+    <Text color="yellow">[{turn.label}] interrupting current request</Text>
   ) : (
-    <Text color="cyan" debugLabel="WorkingStatus case=working">
+    <Text color="cyan">
       [{turn.label}] working ({elapsedSeconds}s, Ctrl+C to interrupt)
     </Text>
   );

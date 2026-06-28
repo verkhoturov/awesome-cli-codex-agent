@@ -1,6 +1,5 @@
-import { Static, useInput } from 'ink';
+import { Box, Static, useInput } from 'ink';
 import { useSyncExternalStore } from 'react';
-import { Box } from './components/common/Box.js';
 import { HistoryEntryView } from './components/history.js';
 import { Prompt } from './components/prompt.js';
 import { Turn } from './components/turn.js';
@@ -27,7 +26,7 @@ export function InkApp({ onInterrupt, onSubmit, store }: InkAppProps) {
   });
 
   return (
-    <Box debugLabel="App">
+    <Box>
       <Static key={snapshot.staticGeneration} items={snapshot.history}>
         {entry => <HistoryEntryView key={entry.id} entry={entry} />}
       </Static>

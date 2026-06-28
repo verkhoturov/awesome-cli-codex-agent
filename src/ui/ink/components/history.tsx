@@ -1,9 +1,7 @@
-import { useStdout } from 'ink';
+import { Box, Text, useStdout } from 'ink';
 
 import { assertNever } from '../../../utils/assert-never.js';
 import type { HistoryEntry } from '../model.js';
-import { Box } from './common/Box.js';
-import { Text } from './common/Text.js';
 import { Message } from './message.js';
 import { Turn } from './turn.js';
 
@@ -14,7 +12,7 @@ export function HistoryEntryView({ entry }: { entry: HistoryEntry }) {
   switch (entry.type) {
     case 'message':
       return (
-        <Box debugLabel="HistoryEntryView case=message" flexDirection="column">
+        <Box flexDirection="column">
           <Message kind={entry.kind} text={entry.text} />
         </Box>
       );
@@ -22,14 +20,11 @@ export function HistoryEntryView({ entry }: { entry: HistoryEntry }) {
       return (
         <Box
           backgroundColor={'#5a5a5a'}
-          debugLabel="HistoryEntryView case=interaction"
           flexDirection="column"
           marginY={1}
           padding={1}
           width={promptWidth}>
-          <Text color="blue" debugLabel="HistoryEntryView interaction Text">
-            {entry.text.replace(/^\n/u, '')}
-          </Text>
+          <Text color="blue">{entry.text.replace(/^\n/u, '')}</Text>
         </Box>
       );
     case 'turn':

@@ -11,7 +11,6 @@ Options:
   -r, --reasoning-effort <effort>  Primary agent effort override
   --resume <thread-id>    Resume a thread in the selected agent mode
   -s, --sandbox <mode>    Primary agent sandbox: read-only or workspace-write
-  --ui-debug              Show Ink component and case labels around Box/Text
   -h, --help              Show this help
 
 Run /help inside the CLI to list interactive commands.`;
