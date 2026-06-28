@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-import { ensureCodexHome } from '../utils/ensure-codex-home.js';
+import { ensureCodexHome } from './codex-home.js';
 import type { NativeAuthenticationSelection } from './types.js';
 
 const CREDENTIAL_STORE_OVERRIDE = 'cli_auth_credentials_store="file"';

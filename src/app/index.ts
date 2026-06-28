@@ -1,13 +1,10 @@
 #!/usr/bin/env node
 
-import { CodexAppServerClient } from './app-server/client.js';
-import { NativeCodexAuth } from './auth/native-codex-auth.js';
-import { ensureCodexAuthentication } from './cli/authentication.js';
-import { runCli } from './cli/index.js';
-import { usage } from './cli/usage.js';
-import { InkCliUi } from './ui/ink/index.js';
-import { checkCodexCli } from './utils/check-codex-cli.js';
-import { parseArgs } from './utils/cli-arguments.js';
+import { CodexAppServerClient, checkCodexCli, InkCliUi, NativeCodexAuth } from '@/adapters';
+import { parseArgs } from '@/app/cli-arguments.js';
+import { ensureCodexAuthentication } from '@/cli/authentication.js';
+import { runCli } from '@/cli/index.js';
+import { usage } from '@/cli/session/usage.js';
 
 async function main(): Promise<void> {
   const { forceLogin, help, resumeThreadId, state } = parseArgs(process.argv.slice(2));

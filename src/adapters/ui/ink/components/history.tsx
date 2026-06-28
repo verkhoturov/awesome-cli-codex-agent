@@ -1,6 +1,6 @@
 import { Box, Text, useStdout } from 'ink';
 
-import { assertNever } from '../../../utils/assert-never.js';
+import { assertNever } from '@/shared/assert-never.js';
 import type { HistoryEntry } from '../model.js';
 import { Message } from './message.js';
 import { Turn } from './turn.js';

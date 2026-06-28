@@ -6,14 +6,14 @@ import {
   DEFAULT_CODEX_HOME,
   DEFAULT_MODEL,
   DEFAULT_SANDBOX,
-} from '../config.js';
+} from '@/app/config.js';
 import {
   type CliState,
   isReasoningEffort,
   isSandboxMode,
   type ReasoningEffort,
   type SandboxMode,
-} from '../types.js';
+} from '@/core';
 
 const REASONING_EFFORT_HELP = 'none, minimal, low, medium, high, or xhigh';
 

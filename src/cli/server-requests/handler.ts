@@ -2,10 +2,10 @@ import {
   type AppServerRequest,
   decodeAppServerRequest,
   type UserInputQuestion,
-} from '../../app-server/requests.js';
-import type { RpcRequest } from '../../app-server/types.js';
-import type { CliUi } from '../../ui/contracts.js';
-import { assertNever } from '../../utils/assert-never.js';
+} from '@/adapters/app-server/requests.js';
+import type { RpcRequest } from '@/adapters/app-server/types.js';
+import type { CliUi } from '@/adapters/ui/contracts.js';
+import { assertNever } from '@/shared/assert-never.js';
 
 export async function handleServerRequest(request: RpcRequest, ui: CliUi): Promise<unknown> {
   const decoded = decodeAppServerRequest(request);

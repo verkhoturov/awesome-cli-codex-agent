@@ -1,4 +1,4 @@
-import type { ReasoningEffort, SandboxMode } from '../types.js';
+import type { ReasoningEffort, SandboxMode } from '@/core';
 import type { AppServerClient } from './client.js';
 import type { ThreadResumeResponse, ThreadStartResponse, TurnStartResponse } from './types.js';
 

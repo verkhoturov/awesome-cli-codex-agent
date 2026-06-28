@@ -1,10 +1,13 @@
-import { agentProfile } from '../agents/runner.js';
-import type { AppServerClient } from '../app-server/client.js';
-import { resumeThread } from '../app-server/session.js';
-import { DEFAULT_REASONING_EFFORT } from '../config.js';
-import { type CliState, isReasoningEffort, isSandboxMode, type ReasoningEffort } from '../types.js';
-import type { CliTextSuggestion, CliUi } from '../ui/contracts.js';
-import { printStatus, printWelcome } from './session-output.js';
+import { type AppServerClient, type CliTextSuggestion, type CliUi, resumeThread } from '@/adapters';
+import { DEFAULT_REASONING_EFFORT } from '@/app/config.js';
+import {
+  agentProfile,
+  type CliState,
+  isReasoningEffort,
+  isSandboxMode,
+  type ReasoningEffort,
+} from '@/core';
+import { printStatus, printWelcome } from '../session/output.js';
 
 export type CommandResult = 'continue' | 'exit' | 'logout';
 

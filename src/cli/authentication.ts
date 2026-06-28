@@ -1,10 +1,10 @@
-import type { NativeCodexAuth } from '../auth/native-codex-auth.js';
+import type { NativeCodexAuth } from '@/adapters/native-codex/auth.js';
 import {
   isNativeAuthenticationMethod,
   type NativeAuthenticationMethod,
   type NativeAuthenticationSelection,
-} from '../auth/types.js';
-import type { CliUi } from '../ui/contracts.js';
+} from '@/adapters/native-codex/types.js';
+import type { CliUi } from '@/adapters/ui/contracts.js';
 
 const AUTHENTICATION_OPTIONS = [
   { label: 'Sign in with ChatGPT in a browser', value: 'browser' },

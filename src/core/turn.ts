@@ -1,9 +1,9 @@
-import type { AppServerClient } from '../../app-server/client.js';
-import { type AppServerEvent, decodeAppServerEvent } from '../../app-server/events.js';
-import { interruptTurn, startThread, startTurn } from '../../app-server/session.js';
-import type { ThreadTokenUsage, TurnCompletedParams } from '../../app-server/types.js';
-import type { AgentProfile, CliState } from '../../types.js';
-import type { CliUi } from '../../ui/contracts.js';
+import type { AppServerClient } from '@/adapters/app-server/client.js';
+import { type AppServerEvent, decodeAppServerEvent } from '@/adapters/app-server/events.js';
+import { interruptTurn, startThread, startTurn } from '@/adapters/app-server/session.js';
+import type { ThreadTokenUsage, TurnCompletedParams } from '@/adapters/app-server/types.js';
+import type { CliUi } from '@/adapters/ui/contracts.js';
+import type { AgentProfile, CliState } from './types.js';
 
 export type TurnOutputMode = 'activity' | 'full' | 'silent';
 

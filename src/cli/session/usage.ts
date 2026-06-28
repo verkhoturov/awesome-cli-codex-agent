@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL } from '../config.js';
+import { DEFAULT_MODEL } from '@/app/config.js';
 
 export function usage(): string {
   return `Usage: custom-codex-agent [options]

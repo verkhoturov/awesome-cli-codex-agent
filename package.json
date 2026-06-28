@@ -9,19 +9,19 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/app/index.js",
   "bin": {
-    "custom-codex-agent": "dist/index.js"
+    "custom-codex-agent": "dist/app/index.js"
   },
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "check": "tsc --noEmit && biome check",
-    "dev": "tsx src/index.ts",
-    "resume": "node dist/index.js --resume",
-    "start": "node dist/index.js",
+    "dev": "tsx src/app/index.ts",
+    "resume": "node dist/app/index.js --resume",
+    "start": "node dist/app/index.js",
     "format": "biome format --write"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
     "@biomejs/biome": "2.2.0",
     "@types/node": "^26.0.0",
     "@types/react": "19.2.17",
+    "tsc-alias": "^1.8.17",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

@@ -1,4 +1,4 @@
-import type { TokenUsageBreakdown } from './app-server/types.js';
+import type { TokenUsageBreakdown } from '@/adapters/app-server/types.js';
 
 export const SANDBOX_MODES = ['read-only', 'workspace-write'] as const;
 export const REASONING_EFFORTS = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const;

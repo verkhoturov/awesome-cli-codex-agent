@@ -1,7 +1,7 @@
-import type { TurnRunner } from '../cli/turn/runner.js';
-import { DEFAULT_REASONING_EFFORT } from '../config.js';
-import type { AgentProfile, CliState } from '../types.js';
-import type { CliUi } from '../ui/contracts.js';
+import type { CliUi } from '@/adapters/ui/contracts.js';
+import { DEFAULT_REASONING_EFFORT } from '@/app/config.js';
+import type { TurnRunner } from './turn.js';
+import type { AgentProfile, CliState } from './types.js';
 
 const AGENT_INSTRUCTIONS = `You are a software engineering agent working directly with the user.
 Analyze repositories, edit files, run commands, and explain results clearly as needed to complete the user's request.

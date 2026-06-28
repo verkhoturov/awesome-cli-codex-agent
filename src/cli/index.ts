@@ -1,12 +1,9 @@
-import { runAgentTurn } from '../agents/runner.js';
-import type { AppServerClient } from '../app-server/client.js';
-import type { CliState } from '../types.js';
-import type { CliUi } from '../ui/contracts.js';
-import { type CommandResult, commandSuggestions, handleCommand } from './commands.js';
+import type { AppServerClient, CliUi } from '@/adapters';
+import { type CliState, runAgentTurn, TurnRunner } from '@/core';
+import { type CommandResult, commandSuggestions, handleCommand } from './commands/index.js';
 import { handleServerRequest } from './server-requests/handler.js';
 import { PromptQueue } from './server-requests/queue.js';
-import { printSessionSummary, printWelcome } from './session-output.js';
-import { TurnRunner } from './turn/runner.js';
+import { printSessionSummary, printWelcome } from './session/output.js';
 
 export async function runCli(
   state: CliState,

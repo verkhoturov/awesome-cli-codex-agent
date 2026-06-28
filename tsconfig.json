@@ -6,6 +6,16 @@
     "jsx": "react-jsx",
     "rootDir": "src",
     "outDir": "dist",
+    "paths": {
+      "@/adapters": ["./src/adapters/index.ts"],
+      "@/adapters/*": ["./src/adapters/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/cli": ["./src/cli/index.ts"],
+      "@/cli/*": ["./src/cli/*"],
+      "@/core": ["./src/core/index.ts"],
+      "@/core/*": ["./src/core/*"],
+      "@/shared/*": ["./src/shared/*"]
+    },
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,

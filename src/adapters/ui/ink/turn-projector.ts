@@ -1,6 +1,6 @@
-import type { RenderableAppServerEvent } from '../../app-server/events.js';
-import type { FileChange, ThreadItem } from '../../app-server/types.js';
-import { assertNever } from '../../utils/assert-never.js';
+import type { RenderableAppServerEvent } from '@/adapters/app-server/events.js';
+import type { FileChange, ThreadItem } from '@/adapters/app-server/types.js';
+import { assertNever } from '@/shared/assert-never.js';
 import type { TurnBlockKind, TurnView } from './model.js';
 
 export function projectTurnEvent(turn: TurnView, event: RenderableAppServerEvent): TurnView {

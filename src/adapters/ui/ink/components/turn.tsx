@@ -1,7 +1,7 @@
 import { Box, Text } from 'ink';
 import { useEffect, useState } from 'react';
 
-import { assertNever } from '../../../utils/assert-never.js';
+import { assertNever } from '@/shared/assert-never.js';
 import type { TurnBlock, TurnView } from '../model.js';
 
 interface TurnProps {

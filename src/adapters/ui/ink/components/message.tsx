@@ -1,5 +1,5 @@
 import { Text, useStdout } from 'ink';
-import { assertNever } from '../../../utils/assert-never.js';
+import { assertNever } from '@/shared/assert-never.js';
 import type { UiMessageKind } from '../../contracts.js';
 
 interface MessageProps {

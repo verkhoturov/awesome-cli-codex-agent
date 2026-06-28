@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { CliState, ReasoningEffort, SandboxMode } from './types.js';
+import type { CliState, ReasoningEffort, SandboxMode } from '@/core';
 
 export const APP_SERVER_CLIENT_INFO = {
   name: 'custom_codex_agent',
@@ -10,7 +10,7 @@ export const APP_SERVER_CLIENT_INFO = {
 } as const;
 
 export const DEFAULT_CODEX_HOME = join(
-  fileURLToPath(new URL('..', import.meta.url)),
+  fileURLToPath(new URL('../..', import.meta.url)),
   '.codex-data',
 );
 

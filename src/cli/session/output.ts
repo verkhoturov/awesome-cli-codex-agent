@@ -1,8 +1,6 @@
-import { agentProfile } from '../agents/runner.js';
-import type { TokenUsageBreakdown } from '../app-server/types.js';
-import { APP_SERVER_CLIENT_INFO } from '../config.js';
-import type { CliState } from '../types.js';
-import type { CliUi } from '../ui/contracts.js';
+import type { CliUi, TokenUsageBreakdown } from '@/adapters';
+import { APP_SERVER_CLIENT_INFO } from '@/app/config.js';
+import { agentProfile, type CliState } from '@/core';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 

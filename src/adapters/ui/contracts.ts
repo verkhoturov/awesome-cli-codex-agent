@@ -1,4 +1,4 @@
-import type { RenderableAppServerEvent } from '../app-server/events.js';
+import type { RenderableAppServerEvent } from '@/adapters/app-server/events.js';
 
 export type UiMessageKind =
   | 'agent'

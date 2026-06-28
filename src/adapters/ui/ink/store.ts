@@ -1,4 +1,4 @@
-import { assertNever } from '../../utils/assert-never.js';
+import { assertNever } from '@/shared/assert-never.js';
 import type { CliInputRequest, CliUiEvent, UiMessageKind } from '../contracts.js';
 import type { HistoryEntry, InkUiSnapshot, TurnBlockKind } from './model.js';
 import { appendTurnBlock, projectTurnEvent } from './turn-projector.js';
